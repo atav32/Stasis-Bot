@@ -21,12 +21,12 @@ namespace Stasis.Software.Netduino
 			motorB.Reversed = true;
 
 			// Rangers
-			InfraredRanger irFront = new InfraredRanger(Pins.GPIO_PIN_A3);
-			InfraredRanger irBack = new InfraredRanger(Pins.GPIO_PIN_A2);
+			InfraredDistanceSensor irFront = new InfraredDistanceSensor(Pins.GPIO_PIN_A3);
+			InfraredDistanceSensor irBack = new InfraredDistanceSensor(Pins.GPIO_PIN_A2);
 
 			// Robot and its controller
 			StasisRobot bot = new StasisRobot(motorA, motorB, irFront, irBack);
-			BalbotController controller = new BalbotController(bot);
+			StasisController controller = new StasisController(bot);
 
 			// Calibrate controller
 			controller.Calibrate();
@@ -34,7 +34,7 @@ namespace Stasis.Software.Netduino
 			// Think Loop
 			while (true)
 			{
-				controller.Move();
+				controller.Think();
 			}
 		}
 	}

@@ -64,7 +64,7 @@ namespace Stasis.Software.Netduino
 		/// Constructor
 		/// </summary>
 		/// <param name="setPoint"></param>
-		public PID(double setPoint, double proportionalConstant, double integrationConstant, double derivativeConstant)
+		public PID(double setPoint = 0, double proportionalConstant = 0, double integrationConstant = 0, double derivativeConstant = 0)
 		{
 			this.SetPoint = setPoint;
 			this.ProportionalConstant = proportionalConstant;
@@ -76,7 +76,7 @@ namespace Stasis.Software.Netduino
 		/// Update the PID logic with a new value for the process variable.
 		/// </summary>
 		/// <param name="newProcessValue"></param>
-		public void Update(double newProcessValue)
+		public double Update(double newProcessValue)
 		{
 			// Calculate new error
 			double newError = newProcessValue - this.SetPoint;
@@ -91,6 +91,9 @@ namespace Stasis.Software.Netduino
 
 			// Set output
 			this.Output = pTerm + iTerm + dTerm;
+
+			// Return PID output
+			return this.Output;
 		}
 	}
 }

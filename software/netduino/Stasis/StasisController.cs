@@ -4,89 +4,69 @@ using System.Threading;
 
 namespace Stasis.Software.Netduino
 {
-	public class BalbotController
+	public class StasisController
 	{
-
 		/// <summary>
 		/// Gets the balbot being controlled
 		/// </summary>
-		public StasisRobot Balbot
+		public StasisRobot Robot
 		{
 			get;
 			private set;
 		}
 
 		/// <summary>
-		/// Difference between front and rear rangers averaged over 10 sample window
-		/// </summary>
-		private MovingAverageFilter differenceFilter = new MovingAverageFilter(10);
-
-        /// <summary>
-        /// Filters out spikes of noise in a 7 sample window
-        /// </summary>
-        private MedianFilter noiseFilter = new MedianFilter(7);
-
-		/// <summary>
 		/// PID for motor speed control
 		/// </summary>
-		private PID pidLogic = new PID(0.0, 0.05, 0, 0.5);      // The motors act as the integrator, the I = 0
+		private PID pidLogic = new PID();
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="bot"></param>
-		public BalbotController(StasisRobot bot)
+		public StasisController(StasisRobot bot)
 		{
-			this.Balbot = bot;
+			this.Robot = bot;
 		}
 
-        /// <summary>
-        /// Samples 100 values while the robot is vertical
-        /// </summary>
-        public void Calibrate()
-        {
-            double calibrationPoint = 0;
+		/// <summary>
+		/// Samples 100 values while the robot is vertical
+		/// </summary>
+		public void Calibrate()
+		{
+			// Setup averaging filter for 100 samples
+			var averagingFilter = new MovingAverageFilter(100);
+			
+			// Read in tilt 100 times to get offset from 0 when the
+			// robot is being held at 0 degrees.
+			for (int i = 0; i < 100; i++)
+			{
+				// Update state/sensors
+				this.Robot.Update();
 
-            for (int i = 0; i < 100; i++)
-            {
-                this.Think();
-            }
+				// Add to filter
+				averagingFilter.AddValue(this.Robot.Tilt);
+			}
 
-            calibrationPoint = this.differenceFilter.Value;
-
-            pidLogic.SetPoint = calibrationPoint;
-        }
+			// Set point for the PID is the tilt angle when the robot
+			// is vertical.
+			this.pidLogic.SetPoint = averagingFilter.Value;
+		}
 
 		/// <summary>
 		/// Performs one iteration of the controller
 		/// </summary>
 		public void Think()
 		{
+			// Let the robot update it's state
+			this.Robot.Update();
 
-			this.Balbot.FrontVerticalRanger.Update();
-			this.Balbot.RearVerticalRanger.Update();
+			// Update the PID 
+			this.pidLogic.Update(this.Robot.Tilt);
 
-			double front = this.Balbot.FrontVerticalRanger.Distance;
-			double back = this.Balbot.RearVerticalRanger.Distance;
-
-            this.noiseFilter.AddValue(back - front);
-			this.differenceFilter.AddValue(this.noiseFilter.Value);
-
-			this.pidLogic.Update(this.differenceFilter.Value);
-			
-
-			Debug.Print((back - front) + "\t:\t" + this.differenceFilter.Value.ToString() + "\t:\t" + pidLogic.Output.ToString());
+			// Setup motors for new PID output
+			this.Robot.LeftMotor.Speed = this.Robot.RightMotor.Speed = (int)System.Math.Round(this.pidLogic.Output);
 		}
 
-        /// <summary>
-        /// Move the motors
-        /// </summary>
-        public void Move()
-        {
-            this.Think();
-
-            this.Balbot.LeftMotor.Speed = this.Balbot.RightMotor.Speed = (int)System.Math.Round(pidLogic.Output);
-        }
-		
 	}
 }

@@ -5,7 +5,7 @@ using Microsoft.SPOT.Hardware;
 
 namespace Stasis.Software.Netduino
 {
-	public class InfraredRanger
+	public class InfraredDistanceSensor
 	{
 		/// <summary>
 		/// Gets the distance in cm
@@ -30,19 +30,21 @@ namespace Stasis.Software.Netduino
 		/// Constructor
 		/// </summary>
 		/// <param name="pin"></param>
-		public InfraredRanger(Cpu.Pin pin, int averagingWindow = 30)
+		public InfraredDistanceSensor(Cpu.Pin pin, int averagingWindow = 30)
 		{
 			this.sensorInput = new AnalogInput(pin);
 			this.averagingFilter = new MovingAverageFilter(averagingWindow);
 		}
 
 		/// <summary>
-		/// Updates distance value for this ranger
+		/// Updates distance value for this ranger and returns the new value
 		/// </summary>
-		public void Update()
+		public double Update()
 		{
 			this.averagingFilter.AddValue(this.sensorInput.Read());
 			this.Distance = (this.averagingFilter.Value / 1023.0) * 5.0;
+
+			return this.Distance;
 		}
 	}
 }

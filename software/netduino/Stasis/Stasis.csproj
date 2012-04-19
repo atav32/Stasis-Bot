@@ -30,17 +30,20 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
-    <Compile Include="Stasis.cs" />
+    <Compile Include="Sensors\Analog5DOF.cs" />
+    <Compile Include="Utility\exMath.cs" />
+    <Compile Include="StasisRobot.cs" />
     <Compile Include="StasisController.cs" />
-    <Compile Include="KalmanFilter.cs" />
-    <Compile Include="InfraredRanger.cs" />
-    <Compile Include="MedianFilter.cs" />
+    <Compile Include="Filters\KalmanFilter.cs" />
+    <Compile Include="Sensors\InfraredDistanceSensor.cs" />
+    <Compile Include="Filters\MedianFilter.cs" />
     <Compile Include="Motor.cs" />
-    <Compile Include="MovingAverageFilter.cs" />
+    <Compile Include="Filters\MovingAverageFilter.cs" />
     <Compile Include="PID.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Serial9DOF.cs" />
+    <Compile Include="Sensors\Serial9DOF.cs" />
+    <Compile Include="Utility\Vector.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SPOT.Hardware" />
