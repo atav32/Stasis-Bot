@@ -17,6 +17,15 @@ namespace Stasis.Software.Netduino
 		}
 
 		/// <summary>
+		/// Gets or sets the correction offset for this sensor
+		/// </summary>
+		public double Offset
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
 		/// Analog pin where sensor is hooked up
 		/// </summary>
 		private AnalogInput sensorInput = null;
@@ -41,9 +50,15 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		public double Update()
 		{
-			this.averagingFilter.AddValue(this.sensorInput.Read());
-			this.Distance = (this.averagingFilter.Value / 1023.0) * 5.0;
+			// Calculate voltage (assumes 5.0V reference)
+			var voltage = ((double)this.sensorInput.Read() / 1023.0) * 5.0;
 
+			// Calculate distance using
+			// http://tutorial.cytron.com.my/2011/08/10/project-7-%E2%80%93-analog-sensor-range-using-infrared-distance-sensor/
+			this.averagingFilter.AddValue(1.0 / ((voltage - 0.1911) / 20.99));
+			this.Distance = this.averagingFilter.Value + this.Offset;
+
+			// Return new distance value
 			return this.Distance;
 		}
 	}

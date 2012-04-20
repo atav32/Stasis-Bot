@@ -68,6 +68,7 @@ namespace Stasis.Software.Netduino
 			this.RightMotor = rightMotor;
 			this.FrontDistanceSensor = frontRanger;
 			this.RearDistanceSensor = rearRanger;
+			this.RearDistanceSensor.Offset = 2.2;
 		}
 
 		/// <summary>
@@ -106,22 +107,23 @@ namespace Stasis.Software.Netduino
 
 			// Length AB is the distance from the front sensor + a constant distance from the front 
 			// sensor to where the angle is actually made
-			double AB = front;
-			double AB2 = XMath.Pow(AB, 2.0);
+			double AB = front + 3.519527;
+			double AB2 = System.Math.Pow(AB, 2.0);
 
 			// Length AC is the distance from the rear sensor + a constant distance from the front 
 			// sensor to where the angle is actually made
-			double AC = rear;
-			double AC2 = XMath.Pow(AC, 2.0);
+			double AC = rear + 3.519527;
+			double AC2 = System.Math.Pow(AC, 2.0);
 
 			// We calculate CB^2 using law of cosines
-			double CB2 = AB2 + AC2 + (2 * AB * AC * XMath.Cos(BAC));
+			double CB2 = AB2 + AC2 - (2 * AB * AC * XMath.Cos(BAC));
+			double CB = XMath.Sqrt(CB2);
 
 			// Using CB^2 and AB, we can get angle ABC
-			double ABC = XMath.Acos((AC2 - CB2 - AB2) / (2 * CB2 * AB2));
+			double ABC = XMath.Acos((AC2 - CB2 - AB2) / (-2.0 * CB * AB));
 
 			// Now we know angle ADB ... also known as our tilt
-			return XMath.PI - BAD - ABC;
+			return (XMath.PI - BAD - ABC) * (180 / System.Math.PI);
 		}
 	}
 }

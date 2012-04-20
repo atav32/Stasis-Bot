@@ -482,35 +482,84 @@ namespace ElzeKool
 			return Cos((System.Math.PI / 2.0F) - x);
 		}
 
+		public static double InvSqrt(double x)
+		{
+			long i;
+			float number = (float)x;
+			float x2, y;
+			const float threehalfs = 1.5F;
+			unsafe
+			{
+				x2 = number * 0.5F;
+				y = number;
+				i = *(long*)&y;                       // evil floating point bit level hacking
+				i = 0x5f3759df - (i >> 1);               // what the fuck?
+				y = *(float*)&i;
+				y = y * (threehalfs - (x2 * y * y));   // 1st iteration
+				//      y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+			}
+			return y;
+		}
+
 		/// <summary>
 		/// Returns the square root of a specified number
 		/// </summary>
 		/// <param name="x">A number</param>
 		/// <returns>square root of x</returns>
-		public static double Sqrt(double x)
+		public static double Sqrt(double xDouble)
 		{
-			double i = 0;
-			double x1 = 0.0F;
-			double x2 = 0.0F;
+			var x = (float)xDouble;
 
-			if (x == 0F) return 0F;
+			//cut off any special case
+            if (x <= 0.0f)
+                return 0.0f;
 
-			while ((i * i) <= x)
-				i += 0.1F;
+            //here is a kind of base-10 logarithm
+            //so that the argument will fall between
+            //1 and 100, where the convergence is fast
+            float exp = 1.0f;
 
-			x1 = i;
+            while (x < 1.0f)
+            {
+                 x *= 100.0f;
+                 exp *= 0.1f;
+            }
 
-			for (int j = 0; j < 10; j++)
-			{
-				x2 = x;
-				x2 /= x1;
-				x2 += x1;
-				x2 /= 2;
-				x1 = x2;
-			}
+            while (x > 100.0f)
+            {
+                x *= 0.01f;
+                exp *= 10.0f;
+            }
 
-			return x2;
+            //choose the best starting point
+            //upon the actual argument value
+            float prev;
 
+            if (x > 10f)
+            {
+                //decade (10..100)
+                prev = 5.51f;
+            }
+            else if (x == 1.0f)
+            {
+                //avoid useless iterations
+                return x * exp;
+            }
+            else
+            {
+                //decade (1..10)
+                prev = 1.741f;
+            }
+
+            //apply the Newton-Rhapson method
+            //just for three times
+            prev = 0.5f * (prev + x / prev);
+            prev = 0.5f * (prev + x / prev);
+            prev = 0.5f * (prev + x / prev);
+
+            //adjust the result multiplying for
+            //the base being cut off before
+            return prev * exp;
 		}
 
 		/// <summary>

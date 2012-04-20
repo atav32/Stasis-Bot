@@ -18,7 +18,7 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// PID for motor speed control
 		/// </summary>
-		private PID pidLogic = new PID();
+		private PID pidLogic = new PID(proportionalConstant:10);
 
 		/// <summary>
 		/// Constructor
@@ -50,8 +50,11 @@ namespace Stasis.Software.Netduino
 
 			// Set point for the PID is the tilt angle when the robot
 			// is vertical.
-			this.pidLogic.SetPoint = averagingFilter.Value;
+			this.pidLogic.SetPoint = 90;
 		}
+
+		int counter = 100;
+		DateTime lastDateTime = DateTime.Now;
 
 		/// <summary>
 		/// Performs one iteration of the controller
@@ -60,6 +63,19 @@ namespace Stasis.Software.Netduino
 		{
 			// Let the robot update it's state
 			this.Robot.Update();
+
+			if (counter > 0)
+			{
+				counter--;
+			}
+			else
+			{
+				var diff = (double)(DateTime.Now - lastDateTime).Ticks;
+				double fps = (100.0 / diff) * TimeSpan.TicksPerSecond;
+				Debug.Print(fps + " >> " + this.Robot.FrontDistanceSensor.Distance + "\t:\t" + this.Robot.RearDistanceSensor.Distance + "\t:\t" + this.Robot.Tilt);
+				lastDateTime = DateTime.Now;
+				counter = 100;
+			}
 
 			// Update the PID 
 			this.pidLogic.Update(this.Robot.Tilt);
