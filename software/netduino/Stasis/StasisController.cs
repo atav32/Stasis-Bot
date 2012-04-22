@@ -6,6 +6,9 @@ namespace Stasis.Software.Netduino
 {
 	public class StasisController
 	{
+        const int DISPLAY_COUNT = 50;
+        const int SATURATION = 20;
+
 		/// <summary>
 		/// Gets the balbot being controlled
 		/// </summary>
@@ -18,8 +21,9 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// PID for motor speed control
 		/// </summary>
-		private PID pidLogic = new PID(proportionalConstant:10);
-
+		private PID pidLogic = new PID(proportionalConstant:5.75);
+        private MedianFilter medianFilter = new MedianFilter(5);
+        
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -27,6 +31,7 @@ namespace Stasis.Software.Netduino
 		public StasisController(StasisRobot bot)
 		{
 			this.Robot = bot;
+            this.pidLogic.SetPoint = 90;
 		}
 
 		/// <summary>
@@ -50,10 +55,10 @@ namespace Stasis.Software.Netduino
 
 			// Set point for the PID is the tilt angle when the robot
 			// is vertical.
-			this.pidLogic.SetPoint = 90;
+			this.pidLogic.SetPoint = 91;
 		}
 
-		int counter = 100;
+        int counter = DISPLAY_COUNT;
 		DateTime lastDateTime = DateTime.Now;
 
 		/// <summary>
@@ -61,27 +66,37 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		public void Think()
 		{
+            int motorValue = 0;
+
 			// Let the robot update it's state
 			this.Robot.Update();
 
-			if (counter > 0)
-			{
-				counter--;
-			}
-			else
-			{
-				var diff = (double)(DateTime.Now - lastDateTime).Ticks;
-				double fps = (100.0 / diff) * TimeSpan.TicksPerSecond;
-				Debug.Print(fps + " >> " + this.Robot.FrontDistanceSensor.Distance + "\t:\t" + this.Robot.RearDistanceSensor.Distance + "\t:\t" + this.Robot.Tilt);
-				lastDateTime = DateTime.Now;
-				counter = 100;
-			}
+            // Filter tile values
+            this.medianFilter.AddValue(this.Robot.Tilt);
 
 			// Update the PID 
-			this.pidLogic.Update(this.Robot.Tilt);
+			this.pidLogic.Update(medianFilter.Value);
 
 			// Setup motors for new PID output
-			this.Robot.LeftMotor.Speed = this.Robot.RightMotor.Speed = (int)System.Math.Round(this.pidLogic.Output);
+            if (this.medianFilter.Value > (this.pidLogic.SetPoint - SATURATION) && this.medianFilter.Value < (this.pidLogic.SetPoint + SATURATION))
+                motorValue = (int)System.Math.Round(this.pidLogic.Output);
+
+			this.Robot.LeftMotor.Speed = this.Robot.RightMotor.Speed = motorValue;
+
+            if (counter > 0)
+            {
+                counter--;
+            }
+            else
+            {
+                var diff = (double)(DateTime.Now - lastDateTime).Ticks;
+                double fps = (100.0 / diff) * TimeSpan.TicksPerSecond;
+
+                Debug.Print(motorValue + " >> " + this.Robot.FrontDistanceSensor.Distance + "\t:\t" + this.Robot.RearDistanceSensor.Distance + "\t:\t" + this.medianFilter.Value);
+
+                lastDateTime = DateTime.Now;
+                counter = DISPLAY_COUNT;
+            }
 		}
 
 	}

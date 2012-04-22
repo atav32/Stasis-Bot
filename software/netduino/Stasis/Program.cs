@@ -18,7 +18,8 @@ namespace Stasis.Software.Netduino
 			// Motors
 			Motor motorA = new Motor(Pins.GPIO_PIN_D10, Pins.GPIO_PIN_D12, Pins.GPIO_PIN_D11, Pins.GPIO_PIN_A0);
 			Motor motorB = new Motor(Pins.GPIO_PIN_D9, Pins.GPIO_PIN_D7, Pins.GPIO_PIN_D8, Pins.GPIO_PIN_A1);
-			motorA.Reversed = true;
+            motorA.Reversed = true;
+            motorB.Reversed = true;
 
 			// Rangers
 			InfraredDistanceSensor irFront = new InfraredDistanceSensor(Pins.GPIO_PIN_A4);
@@ -29,7 +30,9 @@ namespace Stasis.Software.Netduino
 			StasisController controller = new StasisController(bot);
 
 			// Calibrate controller
-			controller.Calibrate();
+			//controller.Calibrate();
+
+
 
 			// Think Loop
 			while (true)
