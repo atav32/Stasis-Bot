@@ -50,8 +50,8 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		public double Update()
 		{
-			// Calculate voltage (assumes 5.0V reference)
-			var voltage = ((double)this.sensorInput.Read() / 1023.0) * 5.0;
+			// Calculate voltage
+			var voltage = ((double)this.sensorInput.Read() / Environment.ADCResolution) * Environment.AnalogReferenceVoltage;
 
 			// Calculate distance using
 			// http://tutorial.cytron.com.my/2011/08/10/project-7-%E2%80%93-analog-sensor-range-using-infrared-distance-sensor/
