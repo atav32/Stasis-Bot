@@ -2,6 +2,7 @@ using System;
 using Microsoft.SPOT;
 using SecretLabs.NETMF.Hardware;
 using Microsoft.SPOT.Hardware;
+using Stasis.Software.Netduino.Extensions;
 
 namespace Stasis.Software.Netduino
 {
@@ -51,7 +52,7 @@ namespace Stasis.Software.Netduino
 		public double Update()
 		{
 			// Calculate voltage
-			var voltage = ((double)this.sensorInput.Read() / Environment.ADCResolution) * Environment.AnalogReferenceVoltage;
+			var voltage = (double)this.sensorInput.ReadVoltage();
 
 			// Calculate distance using
 			// http://tutorial.cytron.com.my/2011/08/10/project-7-%E2%80%93-analog-sensor-range-using-infrared-distance-sensor/

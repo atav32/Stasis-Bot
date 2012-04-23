@@ -35,6 +35,8 @@
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
     <Compile Include="Environment.cs" />
+    <Compile Include="Extensions\AnalogInputExtensions.cs" />
+    <Compile Include="Extensions\ExtensionAttribute.cs" />
     <Compile Include="Sensors\Analog5DOF.cs" />
     <Compile Include="Utility\exMath.cs" />
     <Compile Include="StasisRobot.cs" />

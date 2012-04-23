@@ -4,6 +4,7 @@ using Microsoft.SPOT.IO;
 using SecretLabs.NETMF.Hardware;
 using Microsoft.SPOT.Hardware;
 using Stasis.Software.Netduino.Utility;
+using Stasis.Software.Netduino.Extensions;
 
 namespace Stasis.Software.Netduino.Sensors
 {
@@ -49,6 +50,32 @@ namespace Stasis.Software.Netduino.Sensors
 		private AnalogInput _yGyroInput = null;
 
 		/// <summary>
+		/// Supply voltage to electronics on the board in mV
+		/// </summary>
+		private const double _supplyVoltage = 2800;
+
+		/// <summary>
+		/// Zero G voltage output from the accelerometer in mV
+		/// </summary>
+		private const double _accelerometerZeroGVoltage = Analog5DOF._supplyVoltage / 2.0;
+
+		/// <summary>
+		/// Resolution of the accelerometer in mV/G (Accelerometer is +-3G)
+		/// </summary>
+		private const double _accelerometerResolution = (Analog5DOF._accelerometerZeroGVoltage / 3.0);
+
+		/// <summary>
+		/// Voltage output of the gyro when rotation rate = 0 deg/s, in mV
+		/// </summary>
+		private const double _gyroZeroRateVoltage = 1350.0;
+
+		/// <summary>
+		/// Resolution of the gyro in mV/deg/s
+		/// </summary>s
+		private const double _gyroResolution = 2.0;
+
+
+		/// <summary>
 		/// Constructor.
 		/// </summary>
 		/// <param name="xAccelPin"></param>
@@ -91,24 +118,48 @@ namespace Stasis.Software.Netduino.Sensors
 		{
 			if (this._xAccelInput != null)
 			{
-				this.Acceleration.X = this._xAccelInput.Read();
+				this.Acceleration.X = this.CalculateAcceleration(this._xAccelInput.ReadVoltage());
 			}
 			if (this._yAccelInput != null)
 			{
-				this.Acceleration.Y = this._yAccelInput.Read();
+				this.Acceleration.Y = this.CalculateAcceleration(this._yAccelInput.ReadVoltage());
 			}
 			if (this._zAccelInput != null)
 			{
-				this.Acceleration.Z = this._zAccelInput.Read();
+				this.Acceleration.Z = this.CalculateAcceleration(this._zAccelInput.ReadVoltage());
 			}
 			if (this._xGyroInput != null)
 			{
-				this.RotationRate.X = this._xGyroInput.Read();
+				this.RotationRate.X = this.CalculateRotationRate(this._xGyroInput.ReadVoltage());
 			}
 			if (this._yGyroInput != null)
 			{
-				this.RotationRate.Y = this._yGyroInput.Read();
+				this.RotationRate.Y = this.CalculateRotationRate(this._yGyroInput.ReadVoltage());
 			}
+		}
+
+		/// <summary>
+		/// Calculates the current rotation rate for an axis when specified the 
+		/// ADC reading from the output for that axis.
+		/// </summary>
+		/// <param name="adcVoltage"></param>
+		/// <returns></returns>
+		private double CalculateRotationRate(double adcVoltage)
+		{
+			var mV = (adcVoltage * 1000.0) - Analog5DOF._gyroZeroRateVoltage;
+			return mV / Analog5DOF._gyroResolution;
+		}
+
+		/// <summary>
+		/// Calculates the current acceleration for an axis when specified the 
+		/// ADC reading from the output for that axis.
+		/// </summary>
+		/// <param name="adcVoltage"></param>
+		/// <returns></returns>
+		private double CalculateAcceleration(double adcVoltage)
+		{
+			var mV = (adcVoltage * 1000.0) - Analog5DOF._accelerometerZeroGVoltage;
+			return mV / Analog5DOF._accelerometerResolution;
 		}
 	}
 }
