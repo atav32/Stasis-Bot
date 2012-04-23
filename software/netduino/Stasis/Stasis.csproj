@@ -29,6 +29,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Stasis.Software.Netduino.Program</StartupObject>
+  </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
     <Compile Include="Environment.cs" />
@@ -52,7 +55,17 @@
     <Reference Include="Microsoft.SPOT.Hardware.SerialPort" />
     <Reference Include="Microsoft.SPOT.IO" />
     <Reference Include="Microsoft.SPOT.Native" />
-    <Reference Include="SecretLabs.NETMF.Hardware" />
-    <Reference Include="SecretLabs.NETMF.Hardware.Netduino" />
+    <Reference Include="SecretLabs.NETMF.Hardware">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Secret Labs\Netduino SDK\Assemblies\v4.1\SecretLabs.NETMF.Hardware.dll</HintPath>
+    </Reference>
+    <Reference Include="SecretLabs.NETMF.Hardware.Netduino">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Secret Labs\Netduino SDK\Assemblies\v4.1\SecretLabs.NETMF.Hardware.Netduino.dll</HintPath>
+    </Reference>
+    <Reference Include="SecretLabs.NETMF.Hardware.NetduinoMini">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Secret Labs\Netduino SDK\Assemblies\v4.1\SecretLabs.NETMF.Hardware.NetduinoMini.dll</HintPath>
+    </Reference>
+    <Reference Include="SecretLabs.NETMF.Hardware.NetduinoPlus">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Secret Labs\Netduino SDK\Assemblies\v4.1\SecretLabs.NETMF.Hardware.NetduinoPlus.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

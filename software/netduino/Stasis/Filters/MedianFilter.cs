@@ -65,7 +65,7 @@ namespace Stasis.Software.Netduino
         /// <param name="value">Newest value</param>
         public void AddValue(double value)
         {
-            double[] temporaryValues = new double[this.Count];
+           
 
             if (this.Count == this.Size)
             {
@@ -75,6 +75,8 @@ namespace Stasis.Software.Netduino
 
             this.Values.Enqueue(value);
             this.Count++;
+
+            double[] temporaryValues = new double[this.Count];
 
             this.Values.CopyTo(temporaryValues, 0);
             this.SortedValues = QuickSort(temporaryValues, 0, Count - 1);
@@ -90,7 +92,7 @@ namespace Stasis.Software.Netduino
         {
             int index = (int)(this.Count / 2);
 
-            if (this.Count % 2 == 0)
+            if (this.Count > 0 && this.Count % 2 == 0)
             {
                 index -= 1;
             }
