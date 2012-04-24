@@ -1,6 +1,7 @@
 using System;
 using Microsoft.SPOT;
 using Stasis.Software.Netduino.Extensions;
+using System.Text;
 
 namespace Stasis.Software.Netduino.Communication
 {
@@ -12,16 +13,7 @@ namespace Stasis.Software.Netduino.Communication
 			/// <summary>
 			/// Gets the type of message received from the PC
 			/// </summary>
-			public MessageType Type
-			{
-				get;
-				private set;
-			}
-
-			/// <summary>
-			/// Gets the data in this message
-			/// </summary>
-			public byte[] Data
+			public string Type
 			{
 				get;
 				private set;
@@ -41,18 +33,10 @@ namespace Stasis.Software.Netduino.Communication
 			/// </summary>
 			/// <param name="type"></param>
 			/// <param name="data"></param>
-			public Message(MessageType type, double[] values)
+			public Message(string type, double[] values)
 			{
 				this.Type = type;
 				this.Values = values;
-				this.Data = new byte[this.Values.Length * 2];
-				int count = 0;
-				for (int i = 0; i < this.Values.Length; i++)
-				{
-					int val = (int)System.Math.Round(values[i] * 1000);
-					this.Data[count++] = val.GetLSB();
-					this.Data[count++] = val.GetMSB();
-				}
 			}
 
 			/// <summary>
@@ -62,23 +46,23 @@ namespace Stasis.Software.Netduino.Communication
 			/// <param name="rawMessageLength"></param>
 			public Message(byte[] rawMessage, int rawMessageLength)
 			{
-				this.Type = (MessageType)rawMessage[2];
-				if (rawMessageLength > 5)
+				byte[] rawMessageRealSize = new byte[rawMessageLength];
+				for (int i = 0; i < rawMessageLength; i++)
 				{
-					// Has data
-					this.Data = new byte[rawMessageLength - 5];
-					for (int i = 0; i < rawMessageLength - 5; i++)
-					{
-						this.Data[i] = rawMessage[i + 3];
-					}
-					this.Values = new double[rawMessageLength / 2];
-					int counter = 0;
-					for (int i = 0; i < this.Values.Length; i++)
-					{
-						int lsb = this.Data[counter++];
-						int msb = this.Data[counter++];
-						this.Values[i] = lsb | (msb << 8);
-					}
+					rawMessageRealSize[i] = rawMessage[i];
+				}
+				string s = new String(Encoding.UTF8.GetChars(rawMessageRealSize));
+				var parts = s.Split(new char[] { ',' });
+				this.Type = parts[0];
+				if (this.Type.IndexOf('*') != -1)
+				{
+					var typeParts = this.Type.Split(new char[] { '*' });
+					this.Type = typeParts[typeParts.Length - 1];					
+				}
+				this.Values = new double[parts.Length - 2];
+				for (int i = 1; i < parts.Length - 1; i++)
+				{
+					this.Values[i - 1] = double.Parse(parts[i]);
 				}
 			}
 		}
@@ -86,11 +70,11 @@ namespace Stasis.Software.Netduino.Communication
 		/// <summary>
 		/// Types of messages
 		/// </summary>
-		public enum MessageType
+		public class MessageType
 		{
-			ReportPID = 0x21,
-			SetPID = 0x31,
-			ReportLoopSpeed = 0x41,
+			public const string SetPID = "SPID";
+			public const string GetPID = "GPID";
+			public const string GetLoopSpeed = "GLS";
 		}
 
 		/// <summary>

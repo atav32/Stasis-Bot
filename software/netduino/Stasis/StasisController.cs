@@ -68,6 +68,41 @@ namespace Stasis.Software.Netduino
 		{
 			this.Robot = bot;
 			this.pidLogic.SetPoint = 91.75;        // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+			this.wifiMonitor.MessageReceived += new WiFiMonitor.MessageReceivedEventHandler(WifiMonitor_MessageReceived);
+		}
+
+		private void WifiMonitor_MessageReceived(object sender, WiFiMonitor.MessageReceivedEventArgs e)
+		{
+			if (e.Message.Type == WiFiMonitor.MessageType.SetPID)
+			{
+				if (e.Message.Values.Length >= 5)
+				{
+					if (e.Message.Values[0] == 1)
+					{
+						// Set PID stuff for angle PID controller
+						this.pidLogic.ProportionalConstant = e.Message.Values[1];
+						this.pidLogic.IntegrationConstant = e.Message.Values[2];
+						this.pidLogic.DerivativeConstant = e.Message.Values[3];
+						this.pidLogic.SetPoint = e.Message.Values[4];
+					}
+					else if (e.Message.Values[0] == 2)
+					{
+						// Set PID stuff for delta Angle PID controller
+					}
+				}
+			}
+			if (e.Message.Type == WiFiMonitor.MessageType.GetPID || e.Message.Type == WiFiMonitor.MessageType.SetPID)
+			{
+				if (e.Message.Values[0] == 1)
+				{
+					// Send out PID values for Angle PID
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 1, pidLogic.ProportionalConstant, pidLogic.IntegrationConstant, pidLogic.DerivativeConstant, pidLogic.SetPoint }));
+				}
+				else if (e.Message.Values[0] == 2)
+				{
+					// Send out PID values for delta angle PID
+				}
+			}
 		}
 
 		/// <summary>
@@ -142,7 +177,7 @@ namespace Stasis.Software.Netduino
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
 					Debug.Print(this.LoopSpeed.ToString());
-					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.ReportLoopSpeed, new double[] { this.LoopSpeed }));
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
 				{

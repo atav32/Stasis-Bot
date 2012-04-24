@@ -2,6 +2,7 @@ using System;
 using Microsoft.SPOT;
 using System.IO.Ports;
 using Stasis.Software.Netduino.Extensions;
+using System.Text;
 
 namespace Stasis.Software.Netduino.Communication
 {
@@ -48,9 +49,15 @@ namespace Stasis.Software.Netduino.Communication
 		/// <param name="message"></param>
 		public void SendMessage(Message message)
 		{
-			this._port.Write(new byte[] { 0xFF, 0xFF, (byte)message.Type }, 0, 3);
-			this._port.Write(message.Data, 0, message.Data.Length);
-			this._port.Write(new byte[] { 0xFF, 0xFE }, 0, 2);
+			string output = message.Type + ",";
+			foreach (var val in message.Values)
+			{
+				output += val.ToString("N3") + ",";
+			}
+			output += "\r\n";
+			byte[] outBytes = Encoding.UTF8.GetBytes(output);
+			this._port.Write(outBytes, 0, outBytes.Length);
+			this._port.Flush();
 		}
 
 		/// <summary>
@@ -64,31 +71,22 @@ namespace Stasis.Software.Netduino.Communication
 			{
 				byte b = this._port.ReadByte();
 
-				if (this.rawMessageLength < 2)
+				if (this.rawMessageLength >= this.rawMessage.Length)
 				{
-					if (b == 0xFF)
-					{
-						this.rawMessage[this.rawMessageLength++] = b;
-					}
-					else
-					{
-						this.rawMessageLength = 0;
-					}
+					this.rawMessageLength = 0;
 				}
-				else
+
+				this.rawMessage[this.rawMessageLength++] = b;
+				if (b == 0x0A && this.rawMessage[this.rawMessageLength - 2] == 0x0D)
 				{
-					this.rawMessage[this.rawMessageLength++] = b;
-					if (b == 0xFE && this.rawMessage[this.rawMessageLength - 2] == 0xFF)
-					{
-						// Received full message
-						Message m = new Message(this.rawMessage, this.rawMessageLength);
+					// Received full message
+					Message m = new Message(this.rawMessage, this.rawMessageLength);
 
-						// Let people know 
-						this.MessageReceived(this, new MessageReceivedEventArgs(m));
+					// Let people know 
+					this.MessageReceived(this, new MessageReceivedEventArgs(m));
 
-						// Reset message
-						this.rawMessageLength = 0;
-					}
+					// Reset message
+					this.rawMessageLength = 0;
 				}
 			}
 		}
