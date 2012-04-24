@@ -32,18 +32,27 @@ namespace Stasis.Software.Netduino
 			set;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
         public double ProportionalError
         {
             get;
             set;
         }
 
+		/// <summary>
+		/// 
+		/// </summary>
         public double IntegrationError
         {
             get;
             set;
         }
 
+		/// <summary>
+		/// 
+		/// </summary>
         public double DerivativeError
         {
             get;
@@ -72,20 +81,12 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Current error in the PID to the set point
 		/// </summary>
-        private double currentError
-        {
-            get;
-            set;
-        }
+		private double currentError;
 
 		/// <summary>
 		/// Accumulative error
 		/// </summary>
-        public double accumulativeError
-        {
-            get;
-            set;
-        }
+		public double accumulativeError;
 
 		/// <summary>
 		/// Constructor
