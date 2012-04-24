@@ -3,6 +3,8 @@ using Microsoft.SPOT;
 using System.Threading;
 using XMath = ElzeKool.exMath;
 using SecretLabs.NETMF.Hardware.Netduino;
+using Stasis.Software.Netduino.Extensions;
+using Stasis.Software.Netduino.Communication;
 
 namespace Stasis.Software.Netduino
 {
@@ -35,7 +37,7 @@ namespace Stasis.Software.Netduino
 			get;
 			private set;
 		}
-
+		
         /// <summary>
         /// Gain of angle PID controller
         /// </summary>
@@ -53,7 +55,27 @@ namespace Stasis.Software.Netduino
             get;
             private set;
         }
+		
+		/// <summary>
+		/// Gets the average (over 1 second) loop speed in iterations per second
+		/// </summary>
+		public int LoopSpeed
+		{
+			get;
+			private set;
+		}
 
+		/// <summary>
+		/// Some state for the loop speed calculations
+		/// </summary>
+		private DateTime lastDateTime = DateTime.Now;
+		private int loopSpeedCounter = 0;
+
+		/// <summary>
+		/// Wifi Monitor instance
+		/// </summary>
+		private WiFiMonitor wifiMonitor = new WiFiMonitor(SerialPorts.COM1, 230400);
+		
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -65,6 +87,41 @@ namespace Stasis.Software.Netduino
             this.angularVelocityPID.SetPoint = angularVelocitySetPoint;
             this.Input1Gain = input1Gain;
             this.Input2Gain = input2Gain;
+			this.wifiMonitor.MessageReceived += new WiFiMonitor.MessageReceivedEventHandler(WifiMonitor_MessageReceived);
+		}
+
+		private void WifiMonitor_MessageReceived(object sender, WiFiMonitor.MessageReceivedEventArgs e)
+		{
+			if (e.Message.Type == WiFiMonitor.MessageType.SetPID)
+			{
+				if (e.Message.Values.Length >= 5)
+				{
+					if (e.Message.Values[0] == 1)
+					{
+						// Set PID stuff for angle PID controller
+						this.pidLogic.ProportionalConstant = e.Message.Values[1];
+						this.pidLogic.IntegrationConstant = e.Message.Values[2];
+						this.pidLogic.DerivativeConstant = e.Message.Values[3];
+						this.pidLogic.SetPoint = e.Message.Values[4];
+					}
+					else if (e.Message.Values[0] == 2)
+					{
+						// Set PID stuff for delta Angle PID controller
+					}
+				}
+			}
+			if (e.Message.Type == WiFiMonitor.MessageType.GetPID || e.Message.Type == WiFiMonitor.MessageType.SetPID)
+			{
+				if (e.Message.Values[0] == 1)
+				{
+					// Send out PID values for Angle PID
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 1, pidLogic.ProportionalConstant, pidLogic.IntegrationConstant, pidLogic.DerivativeConstant, pidLogic.SetPoint }));
+				}
+				else if (e.Message.Values[0] == 2)
+				{
+					// Send out PID values for delta angle PID
+				}
+			}
 		}
 
 		/// <summary>
@@ -96,7 +153,8 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		public void Think()
 		{
-			motorValue = 0;
+			// Motors are 0 by default
+			int motorSpeed = 0;
 
 			// Let the robot update it's state
 			this.Robot.Update();
@@ -125,21 +183,19 @@ namespace Stasis.Software.Netduino
 			// Toggle Debug display
 			if (true)
 			{
-				// Display debug output every displayCount cycles
-				if (counter > 0)
+				var now = DateTime.Now;
+				var diff = (now - lastDateTime).Ticks;
+				if (diff > TimeSpan.TicksPerSecond)
 				{
-					counter--;
+					this.LoopSpeed = this.loopSpeedCounter;
+					this.loopSpeedCounter = 0;
+					this.lastDateTime = now;
+					Debug.Print(this.LoopSpeed.ToString());
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
 				{
-					// Measuring the time delta of each cycle
-					var diff = (double)(DateTime.Now - lastDateTime).Ticks;
-					var fps = (displayCount / diff) * TimeSpan.TicksPerSecond;
-
-					Debug.Print(fps + " >>\t" + motorValue + "\t:\t" + this.Robot.Tilt + "\t:\t" + this.Robot.AngularVelocity + "\t:\t" + nonLinearOuput + "\t:\t" + this.angularVelocityPID.Output);
-
-					lastDateTime = DateTime.Now;
-					counter = displayCount;
+					this.loopSpeedCounter++;
 				}
 			}
 		}

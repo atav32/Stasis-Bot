@@ -34,9 +34,13 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Communication\WiFiMonitor.cs" />
+    <Compile Include="Communication\WiFiMonitor.Message.cs" />
     <Compile Include="Environment.cs" />
     <Compile Include="Extensions\AnalogInputExtensions.cs" />
     <Compile Include="Extensions\ExtensionAttribute.cs" />
+    <Compile Include="Extensions\IntegerExtensions.cs" />
+    <Compile Include="Extensions\SerialPortExtensions.cs" />
     <Compile Include="Sensors\Analog5DOF.cs" />
     <Compile Include="Utility\exMath.cs" />
     <Compile Include="StasisRobot.cs" />
