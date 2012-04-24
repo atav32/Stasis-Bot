@@ -34,6 +34,7 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Communication\WiFiMonitor.cs" />
     <Compile Include="Environment.cs" />
     <Compile Include="Extensions\AnalogInputExtensions.cs" />
     <Compile Include="Extensions\ExtensionAttribute.cs" />
