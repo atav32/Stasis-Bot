@@ -54,7 +54,13 @@ namespace Stasis.Software.Netduino
 			get;
 			private set;
 		}
-		
+
+        public double AngularVelocity
+        {
+            get;
+            private set;
+        }
+
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -81,7 +87,9 @@ namespace Stasis.Software.Netduino
 			this.RearDistanceSensor.Update();
 
 			// Update tilt value
+            var previousTilt = this.Tilt;
 			this.Tilt = CalculateTiltAngleFromDistanceSensors(this.FrontDistanceSensor.Distance, this.RearDistanceSensor.Distance);
+            this.AngularVelocity = this.Tilt - previousTilt;
 		}
 
 		/// <summary>

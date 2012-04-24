@@ -8,14 +8,24 @@ namespace Stasis.Software.Netduino
 {
 	public class StasisController
 	{
-		const int displayCount = 50;
-		const int maxMotorOutput = 150;   // max motor value is actually 100, but sin(output) rarely reaches 1.0 -BZ (4/22/12)
-		const int saturation = 30;
-		const int stableRange = 1;
-		int counter = displayCount;
-		int motorValue = 0;
-		double nonLinearOuput = 0.0;
-		DateTime lastDateTime = DateTime.Now;
+        // Messy declaration of variables
+		private const int displayCount = 50;        // number of cycles to skip before displaying debug once
+		private const int maxMotorOutput = 150;     // max motor value is actually 100, but sin(output) rarely reaches 1.0 -BZ (4/22/12)
+        private const int saturation = 30;          // +/- angle allowed from vertical
+        private int counter = displayCount;         // loop cycle counter
+        private int motorValue = 0;                 // dummy variable for motor variabls
+        private double nonLinearOuput = 0.0;        // dummy varaible for sin(PID output)
+        private DateTime lastDateTime = DateTime.Now;
+
+        /// <summary>
+        /// PID for motor speed control
+        /// </summary>
+        private PID anglePID = new PID(proportionalConstant: 2);            // Current value for nonlinear sine output 
+        private PID angularVelocityPID = new PID(proportionalConstant: 1);
+
+        private MedianFilter angleIRFilter = new MedianFilter(3);
+        private MedianFilter angularVelocityIRFilter = new MedianFilter(3);
+        private MedianFilter accelFilter = new MedianFilter(3);
 
 		/// <summary>
 		/// Gets the balbot being controlled
@@ -26,21 +36,35 @@ namespace Stasis.Software.Netduino
 			private set;
 		}
 
-		/// <summary>
-		/// PID for motor speed control
-		/// </summary>
-		private PID pidLogic = new PID(proportionalConstant: 2.2, integrationConstant: 0.005, derivativeConstant: 1);      // Current value for nonlinear output // Linear Controller: P ~ 5.75 -BZ (4/22/12)
-		private MedianFilter irFilter = new MedianFilter(3);
-		private MedianFilter accelFilter = new MedianFilter(3);
-		
+        /// <summary>
+        /// Gain of angle PID controller
+        /// </summary>
+        public double Input1Gain
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gain of angular velocity PID controller
+        /// </summary>
+        public double Input2Gain
+        {
+            get;
+            private set;
+        }
+
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="bot"></param>
-		public StasisController(StasisRobot bot)
+		public StasisController(StasisRobot bot, double angleSetPoint = 91.6, double angularVelocitySetPoint = 0.0, double input1Gain = 0.5, double input2Gain = 100.0)
 		{
 			this.Robot = bot;
-			this.pidLogic.SetPoint = 91.75;        // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+            this.anglePID.SetPoint = angleSetPoint;        // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+            this.angularVelocityPID.SetPoint = angularVelocitySetPoint;
+            this.Input1Gain = input1Gain;
+            this.Input2Gain = input2Gain;
 		}
 
 		/// <summary>
@@ -64,7 +88,7 @@ namespace Stasis.Software.Netduino
 
 			// Set point for the PID is the tilt angle when the robot
 			// is vertical.
-			this.pidLogic.SetPoint = 91;
+            this.anglePID.SetPoint = averagingFilter.Value;
 		}
 
 		/// <summary>
@@ -78,33 +102,28 @@ namespace Stasis.Software.Netduino
 			this.Robot.Update();
 
 			// Filter tilt values
-			this.irFilter.AddValue(this.Robot.Tilt);      // takes 5 fps
-			//this.accelFilter.AddValue(this.imu.Acceleration.Z);
+			this.angleIRFilter.AddValue(this.Robot.Tilt);               // takes 5 fps
+            this.angularVelocityIRFilter.AddValue(this.Robot.AngularVelocity);
 
 			// Update the PID 
-			this.pidLogic.Update(irFilter.Value);
-			//this.pidLogic.Update(this.Robot.Tilt);  // unfiltered value
+			this.anglePID.Update(this.angleIRFilter.Value);
+            this.angularVelocityPID.Update(this.angularVelocityIRFilter.Value);
 
 			// Apply Nonlinear Map
-			nonLinearOuput = maxMotorOutput * XMath.Sin(this.pidLogic.Output / 180 * System.Math.PI);     // takes 5 fps
+			nonLinearOuput = maxMotorOutput * XMath.Sin(this.anglePID.Output / 180 * System.Math.PI);     // takes 5 fps
 
-			// Setup motors for new PID output
-			//if (this.Robot.Tilt > (this.pidLogic.SetPoint - saturation) && this.Robot.Tilt < (this.pidLogic.SetPoint + saturation))
-			if (this.irFilter.Value > (this.pidLogic.SetPoint - saturation) && this.irFilter.Value < (this.pidLogic.SetPoint + saturation))
+			// Only bother updating motors if tilt is within a certain range of vertical
+			if (this.angleIRFilter.Value > (this.anglePID.SetPoint - saturation) && this.angleIRFilter.Value < (this.anglePID.SetPoint + saturation))
 			{
-				motorValue = (int)System.Math.Round(nonLinearOuput); //(int)System.Math.Round(this.pidLogic.Output);
-
-				// Decaying function for integration error
-				if (this.irFilter.Value > (this.pidLogic.SetPoint - stableRange) && this.irFilter.Value < (this.pidLogic.SetPoint + stableRange))
-				{
-					this.pidLogic.accumulativeError /= 2;
-				}
+                // Update with combined output of angle and angular velocity control
+				motorValue = (int)(System.Math.Round(nonLinearOuput) * this.Input1Gain + this.angularVelocityPID.Output * this.Input2Gain);
 			}
 
+            // Set Motor Speed
 			this.Robot.LeftMotor.Speed = this.Robot.RightMotor.Speed = motorValue;
 
 			// Toggle Debug display
-			if (false)
+			if (true)
 			{
 				// Display debug output every displayCount cycles
 				if (counter > 0)
@@ -117,9 +136,7 @@ namespace Stasis.Software.Netduino
 					var diff = (double)(DateTime.Now - lastDateTime).Ticks;
 					var fps = (displayCount / diff) * TimeSpan.TicksPerSecond;
 
-					//Debug.Print(fps.ToString());
-					Debug.Print(motorValue + "\t:\t" + this.Robot.Tilt + "\t:\t" + this.pidLogic.accumulativeError + "\t:\t" + this.pidLogic.DerivativeError);
-					//Debug.Print(fps + ">>\t" + motorValue + "\t:\t" + this.Robot.Tilt + "\t:\t" + imu.Acceleration.ToString() + "\t:\t" + imu.RotationRate.ToString());
+					Debug.Print(fps + " >>\t" + motorValue + "\t:\t" + this.Robot.Tilt + "\t:\t" + this.Robot.AngularVelocity + "\t:\t" + nonLinearOuput + "\t:\t" + this.angularVelocityPID.Output);
 
 					lastDateTime = DateTime.Now;
 					counter = displayCount;
