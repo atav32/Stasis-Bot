@@ -1,5 +1,6 @@
 using System;
 using Microsoft.SPOT;
+using Stasis.Software.Netduino.Extensions;
 
 namespace Stasis.Software.Netduino.Communication
 {
@@ -27,14 +28,31 @@ namespace Stasis.Software.Netduino.Communication
 			}
 
 			/// <summary>
+			/// Gets the actual values from the message
+			/// </summary>
+			public double[] Values
+			{
+				get;
+				private set;
+			}
+
+			/// <summary>
 			/// Constructor #1
 			/// </summary>
 			/// <param name="type"></param>
 			/// <param name="data"></param>
-			public Message(MessageType type, byte[] data)
+			public Message(MessageType type, double[] values)
 			{
 				this.Type = type;
-				this.Data = data;
+				this.Values = values;
+				this.Data = new byte[this.Values.Length * 2];
+				int count = 0;
+				for (int i = 0; i < this.Values.Length; i++)
+				{
+					int val = (int)System.Math.Round(values[i] * 1000);
+					this.Data[count++] = val.GetLSB();
+					this.Data[count++] = val.GetMSB();
+				}
 			}
 
 			/// <summary>
@@ -52,6 +70,14 @@ namespace Stasis.Software.Netduino.Communication
 					for (int i = 0; i < rawMessageLength - 5; i++)
 					{
 						this.Data[i] = rawMessage[i + 3];
+					}
+					this.Values = new double[rawMessageLength / 2];
+					int counter = 0;
+					for (int i = 0; i < this.Values.Length; i++)
+					{
+						int lsb = this.Data[counter++];
+						int msb = this.Data[counter++];
+						this.Values[i] = lsb | (msb << 8);
 					}
 				}
 			}

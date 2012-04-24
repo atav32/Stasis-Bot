@@ -48,7 +48,7 @@ namespace Stasis.Software.Netduino.Communication
 		/// <param name="message"></param>
 		public void SendMessage(Message message)
 		{
-			this._port.Write(new byte[] { 0xFF, 0xFE, (byte)message.Type }, 0, 3);
+			this._port.Write(new byte[] { 0xFF, 0xFF, (byte)message.Type }, 0, 3);
 			this._port.Write(message.Data, 0, message.Data.Length);
 			this._port.Write(new byte[] { 0xFF, 0xFE }, 0, 2);
 		}
@@ -78,7 +78,7 @@ namespace Stasis.Software.Netduino.Communication
 				else
 				{
 					this.rawMessage[this.rawMessageLength++] = b;
-					if (b == 0xFF && this.rawMessage[this.rawMessageLength - 2] == 0xFE)
+					if (b == 0xFE && this.rawMessage[this.rawMessageLength - 2] == 0xFF)
 					{
 						// Received full message
 						Message m = new Message(this.rawMessage, this.rawMessageLength);

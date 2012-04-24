@@ -141,8 +141,8 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-					Debug.Print("ere");
-					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.ReportLoopSpeed, this.LoopSpeed.GetBytes()));
+					Debug.Print(this.LoopSpeed.ToString());
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.ReportLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
 				{
