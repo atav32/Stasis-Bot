@@ -81,12 +81,12 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Current error in the PID to the set point
 		/// </summary>
-		private double currentError;
+		private double CurrentError;
 
 		/// <summary>
 		/// Accumulative error
 		/// </summary>
-		public double accumulativeError;
+		public double AccumulativeError;
 
 		/// <summary>
 		/// Constructor
@@ -99,7 +99,7 @@ namespace Stasis.Software.Netduino
 			this.IntegrationConstant = integrationConstant;
 			this.DerivativeConstant = derivativeConstant;
 
-            this.currentError = 0;
+            this.CurrentError = 0;
 		}
 
 		/// <summary>
@@ -112,15 +112,15 @@ namespace Stasis.Software.Netduino
 			double newError = newProcessValue - this.SetPoint;
 			
 			// Add to accumulated error
-			this.accumulativeError += newError;
+			this.AccumulativeError += newError;
 
 			// Calculate terms
 			ProportionalError = this.ProportionalConstant * newError;
-			IntegrationError = this.IntegrationConstant * this.accumulativeError;
-			DerivativeError = this.DerivativeConstant * (newError - this.currentError);
+			IntegrationError = this.IntegrationConstant * this.AccumulativeError;
+			DerivativeError = this.DerivativeConstant * (newError - this.CurrentError);
 
             // Store current error
-            this.currentError = newError;
+            this.CurrentError = newError;
 
 			// Set output
 			this.Output = ProportionalError + IntegrationError + DerivativeError;
