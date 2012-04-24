@@ -32,6 +32,25 @@ namespace Stasis.Software.Netduino
 			set;
 		}
 
+        public double ProportionalError
+        {
+            get;
+            set;
+        }
+
+        public double IntegrationError
+        {
+            get;
+            set;
+        }
+
+        public double DerivativeError
+        {
+            get;
+            set;
+        }
+
+
 		/// <summary>
 		/// Gets or sets the set point for the PID
 		/// </summary>
@@ -53,12 +72,20 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Current error in the PID to the set point
 		/// </summary>
-		private double currentError;
+        private double currentError
+        {
+            get;
+            set;
+        }
 
 		/// <summary>
 		/// Accumulative error
 		/// </summary>
-		private double accumulativeError;
+        public double accumulativeError
+        {
+            get;
+            set;
+        }
 
 		/// <summary>
 		/// Constructor
@@ -70,6 +97,8 @@ namespace Stasis.Software.Netduino
 			this.ProportionalConstant = proportionalConstant;
 			this.IntegrationConstant = integrationConstant;
 			this.DerivativeConstant = derivativeConstant;
+
+            this.currentError = 0;
 		}
 
 		/// <summary>
@@ -85,12 +114,15 @@ namespace Stasis.Software.Netduino
 			this.accumulativeError += newError;
 
 			// Calculate terms
-			double pTerm = this.ProportionalConstant * newError;
-			double iTerm = this.IntegrationConstant * this.accumulativeError;
-			double dTerm = this.DerivativeConstant * (newError - this.currentError);
+			ProportionalError = this.ProportionalConstant * newError;
+			IntegrationError = this.IntegrationConstant * this.accumulativeError;
+			DerivativeError = this.DerivativeConstant * (newError - this.currentError);
+
+            // Store current error
+            this.currentError = newError;
 
 			// Set output
-			this.Output = pTerm + iTerm + dTerm;
+			this.Output = ProportionalError + IntegrationError + DerivativeError;
 
 			// Return PID output
 			return this.Output;
