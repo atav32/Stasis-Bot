@@ -2,14 +2,15 @@ using System;
 using Microsoft.SPOT;
 using System.Threading;
 using XMath = ElzeKool.exMath;
+using SecretLabs.NETMF.Hardware.Netduino;
 
 namespace Stasis.Software.Netduino
 {
 	public class StasisController
 	{
-        const int DISPLAY_COUNT = 50;
-        const int MAX_MOTOR_OUTPUT = 110;   // max motor value is actually 100, but sin(output) rarely reaches 1.0 -BZ (4/22/12)
-        const int SATURATION = 30;
+		const int DISPLAY_COUNT = 50;
+		const int MAX_MOTOR_OUTPUT = 150;   // max motor value is actually 100, but sin(output) rarely reaches 1.0 -BZ (4/22/12)
+		const int SATURATION = 30;
 
 		/// <summary>
 		/// Gets the balbot being controlled
@@ -23,9 +24,9 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// PID for motor speed control
 		/// </summary>
-		private PID pidLogic = new PID(proportionalConstant:3.5);      // Current value for nonlinear output // Linear Controller: P ~ 5.75 -BZ (4/22/12)
-        private MedianFilter medianFilter = new MedianFilter(5);
-        
+		private PID pidLogic = new PID(proportionalConstant: 2.25);      // Current value for nonlinear output // Linear Controller: P ~ 5.75 -BZ (4/22/12)
+		private MedianFilter medianFilter = new MedianFilter(3);
+
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -33,7 +34,7 @@ namespace Stasis.Software.Netduino
 		public StasisController(StasisRobot bot)
 		{
 			this.Robot = bot;
-            this.pidLogic.SetPoint = 91;        // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+			this.pidLogic.SetPoint = 90.5;        // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
 		}
 
 		/// <summary>
@@ -43,7 +44,7 @@ namespace Stasis.Software.Netduino
 		{
 			// Setup averaging filter for 100 samples
 			var averagingFilter = new MovingAverageFilter(100);
-			
+
 			// Read in tilt 100 times to get offset from 0 when the
 			// robot is being held at 0 degrees.
 			for (int i = 0; i < 100; i++)
@@ -60,52 +61,57 @@ namespace Stasis.Software.Netduino
 			this.pidLogic.SetPoint = 91;
 		}
 
-        int counter = DISPLAY_COUNT;
-        int motorValue = 0;
-        double nonLinearOuput = 0.0;
+		int counter = DISPLAY_COUNT;
+		int motorValue = 0;
+		double nonLinearOuput = 0.0;
 		DateTime lastDateTime = DateTime.Now;
+		Sensors.Analog5DOF imu = new Sensors.Analog5DOF(Pins.GPIO_PIN_A0, Pins.GPIO_PIN_A1, Pins.GPIO_PIN_A2, Pins.GPIO_PIN_A3);
 
 		/// <summary>
 		/// Performs one iteration of the controller
 		/// </summary>
 		public void Think()
 		{
-            motorValue = 0;   
+			motorValue = 0;
 
 			// Let the robot update it's state
 			this.Robot.Update();
 
-            // Filter tile values
-            this.medianFilter.AddValue(this.Robot.Tilt);
+			// Filter tile values
+			this.medianFilter.AddValue(this.Robot.Tilt);
 
 			// Update the PID 
 			this.pidLogic.Update(medianFilter.Value);
 
-            // Apply Nonlinear Map
-            nonLinearOuput = MAX_MOTOR_OUTPUT * XMath.Sin(this.pidLogic.Output / 180 * System.Math.PI);
+			// Apply Nonlinear Map
+			nonLinearOuput = MAX_MOTOR_OUTPUT * XMath.Sin(this.pidLogic.Output / 180 * System.Math.PI);
 
 			// Setup motors for new PID output
-            if (this.medianFilter.Value > (this.pidLogic.SetPoint - SATURATION) && this.medianFilter.Value < (this.pidLogic.SetPoint + SATURATION))
-                motorValue = (int)System.Math.Round(nonLinearOuput); //(int)System.Math.Round(this.pidLogic.Output);
+			if (this.medianFilter.Value > (this.pidLogic.SetPoint - SATURATION) && this.medianFilter.Value < (this.pidLogic.SetPoint + SATURATION))
+			{
+				motorValue = (int)System.Math.Round(nonLinearOuput); //(int)System.Math.Round(this.pidLogic.Output);
+			}
 
 			this.Robot.LeftMotor.Speed = this.Robot.RightMotor.Speed = motorValue;
+			imu.Update();
 
-            // Display debug output every DISPLAY_COUNT cycles
-            if (counter > 0)
-            {
-                counter--;
-            }
-            else
-            {
-                // Measuring the time delta of each cycle
-                var diff = (double)(DateTime.Now - lastDateTime).Ticks;
-                double fps = (100.0 / diff) * TimeSpan.TicksPerSecond;
+			// Display debug output every DISPLAY_COUNT cycles
+			if (counter > 0)
+			{
+				counter--;
+			}
+			else
+			{
+				// Measuring the time delta of each cycle
+				var diff = (double)(DateTime.Now - lastDateTime).Ticks;
+				var fps = (DISPLAY_COUNT / diff) * TimeSpan.TicksPerSecond;
 
-                Debug.Print(motorValue + " >> " + this.Robot.FrontDistanceSensor.Distance + "\t:\t" + this.Robot.RearDistanceSensor.Distance + "\t:\t" + this.medianFilter.Value);
+				//Debug.Print(fps.ToString());
+				Debug.Print(fps + ">>" + motorValue + "\t:\t" + this.medianFilter.Value + "\t:\t" + imu.Acceleration.ToString());
 
-                lastDateTime = DateTime.Now;
-                counter = DISPLAY_COUNT;
-            }
+				lastDateTime = DateTime.Now;
+				counter = DISPLAY_COUNT;
+			}
 		}
 
 	}

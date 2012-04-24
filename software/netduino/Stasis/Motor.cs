@@ -29,7 +29,7 @@ namespace Stasis.Software.Netduino
 		{
 			get
 			{
-				return this.currentSense.Read();
+				return 0;// return this.currentSense.Read();
 			}
 		}
 
@@ -118,12 +118,11 @@ namespace Stasis.Software.Netduino
 		/// <param name="directionPinA"></param>
 		/// <param name="directionPinB"></param>
 		/// <param name="currentSensePin"></param>
-		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB, Cpu.Pin currentSensePin)
+		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB)
 		{
 			this.speedPWM = new PWM(pwmPin);
 			this.directionOutputA = new OutputPort(directionPinA, false);
 			this.directionOutputB = new OutputPort(directionPinB, false);
-			this.currentSense = new AnalogInput(currentSensePin);
 		}
 
 	}

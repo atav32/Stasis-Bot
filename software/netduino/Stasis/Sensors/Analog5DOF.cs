@@ -89,6 +89,9 @@ namespace Stasis.Software.Netduino.Sensors
 						  Cpu.Pin xGyroPin = Cpu.Pin.GPIO_NONE, 
 						  Cpu.Pin yGyroPin = Cpu.Pin.GPIO_NONE)
 		{
+			this.Acceleration = new Vector(0, 0, 0);
+			this.RotationRate = new Vector(0, 0, 0);
+
 			if (xAccelPin != Cpu.Pin.GPIO_NONE)
 			{
 				_xAccelInput = new AnalogInput(xAccelPin);

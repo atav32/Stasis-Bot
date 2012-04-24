@@ -39,5 +39,10 @@ namespace Stasis.Software.Netduino.Utility
 			this.Z = _z;
 		}
 
+		public override string ToString()
+		{
+			return "{" + this.X + "," + this.Y + "," + this.Z + "}";
+		}
+
 	}
 }

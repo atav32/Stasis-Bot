@@ -16,8 +16,8 @@ namespace Stasis.Software.Netduino
 		{
 	
 			// Motors
-			Motor motorA = new Motor(Pins.GPIO_PIN_D10, Pins.GPIO_PIN_D12, Pins.GPIO_PIN_D11, Pins.GPIO_PIN_A0);
-			Motor motorB = new Motor(Pins.GPIO_PIN_D9, Pins.GPIO_PIN_D7, Pins.GPIO_PIN_D8, Pins.GPIO_PIN_A1);
+			Motor motorA = new Motor(Pins.GPIO_PIN_D10, Pins.GPIO_PIN_D12, Pins.GPIO_PIN_D11);
+			Motor motorB = new Motor(Pins.GPIO_PIN_D9, Pins.GPIO_PIN_D7, Pins.GPIO_PIN_D8);
             motorA.Reversed = true;
             motorB.Reversed = true;
 
@@ -29,16 +29,13 @@ namespace Stasis.Software.Netduino
 			StasisRobot bot = new StasisRobot(motorA, motorB, irFront, irBack);
 			StasisController controller = new StasisController(bot);
 
-			// Calibrate controller
-			//controller.Calibrate();
-
-
-
-			// Think Loop
-			while (true)
+			Timer thinkTimer = new Timer(new TimerCallback(delegate
 			{
 				controller.Think();
-			}
+			}), null, 0, 15);
+
+			// Keep alive
+			Thread.Sleep(Timeout.Infinite);
 		}
 	}
 }
