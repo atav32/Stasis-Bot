@@ -3,6 +3,8 @@ using Microsoft.SPOT;
 using System.Threading;
 using XMath = ElzeKool.exMath;
 using SecretLabs.NETMF.Hardware.Netduino;
+using Stasis.Software.Netduino.Extensions;
+using Stasis.Software.Netduino.Communication;
 
 namespace Stasis.Software.Netduino
 {
@@ -52,6 +54,11 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		private DateTime lastDateTime = DateTime.Now;
 		private int loopSpeedCounter = 0;
+
+		/// <summary>
+		/// Wifi Monitor instance
+		/// </summary>
+		private WiFiMonitor wifiMonitor = new WiFiMonitor(SerialPorts.COM1, 230400);
 		
 		/// <summary>
 		/// Constructor
@@ -134,8 +141,8 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-
-					Debug.Print("FPS = " + this.LoopSpeed);
+					Debug.Print("ere");
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.ReportLoopSpeed, this.LoopSpeed.GetBytes()));
 				}
 				else
 				{
