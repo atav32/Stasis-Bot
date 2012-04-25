@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace StasisCommandCenter
 {
@@ -13,9 +14,18 @@ namespace StasisCommandCenter
 		[STAThread]
 		static void Main()
 		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new MainWindow());
+			try
+			{
+				Application.EnableVisualStyles();
+				Application.SetCompatibleTextRenderingDefault(false);
+				Application.Run(new MainWindow());
+			}
+			catch (COMException e)
+			{
+			}
+			catch (InvalidComObjectException e)
+			{
+			}
 		}
 	}
 }
