@@ -128,5 +128,10 @@ namespace Stasis.Software.Netduino
 			// Return PID output
 			return this.Output;
 		}
+
+		public void Reset()
+		{
+			this.AccumulativeError = 0;
+		}
 	}
 }

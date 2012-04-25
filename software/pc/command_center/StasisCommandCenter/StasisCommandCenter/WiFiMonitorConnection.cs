@@ -51,6 +51,7 @@ namespace StasisCommandCenter
 		/// <param name="port"></param>
 		public void Connect(string ip, int port)
 		{
+			this.connection = new TcpClient();
 			this.connection.Connect(ip, port);
 			this.Connected(this, EventArgs.Empty);
 
