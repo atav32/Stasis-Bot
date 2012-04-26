@@ -29,7 +29,7 @@ namespace Stasis.Software.Netduino
 		/// Gets the infrared ranger measuring distance to the ground on the front 
 		/// side of teh balbot.
 		/// </summary>
-		public InfraredDistanceSensor FrontDistanceSensor
+		public InfraredDistanceSensor FrontIRSensor
 		{
 			get;
 			private set;
@@ -39,17 +39,29 @@ namespace Stasis.Software.Netduino
 		/// Gets the infrared ranger measuring distance to the ground on the rear 
 		/// of the balbot.
 		/// </summary>
-		public InfraredDistanceSensor RearDistanceSensor
+		public InfraredDistanceSensor RearIRSensor
 		{
 			get;
 			private set;
 		}
 
+        public double Displacement
+        {
+            get;
+            private set;
+        }
+
+        public double Velocity
+        {
+            get;
+            private set;
+        }
+
 		/// <summary>
 		/// Gets the current tilt angle of the robot in degrees. This is updated on calls to 
 		/// Think()
 		/// </summary>
-		public double Tilt
+		public double Angle
 		{
 			get;
 			private set;
@@ -72,9 +84,9 @@ namespace Stasis.Software.Netduino
 		{
 			this.LeftMotor = leftMotor;
 			this.RightMotor = rightMotor;
-			this.FrontDistanceSensor = frontRanger;
-			this.RearDistanceSensor = rearRanger;
-			this.RearDistanceSensor.Offset = 2.2;
+			this.FrontIRSensor = frontRanger;
+			this.RearIRSensor = rearRanger;
+			this.RearIRSensor.Offset = 2.2;
 		}
 
 		/// <summary>
@@ -82,15 +94,26 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		public void Update()
 		{
+            // Save previous values
+            var previousAngle = this.Angle;
+            var previousDisplacement = this.Displacement;
+
 			// Update sensors
-			this.FrontDistanceSensor.Update();
-			this.RearDistanceSensor.Update();
+			this.FrontIRSensor.Update();
+			this.RearIRSensor.Update();
+            this.LeftMotor.Update();
+            this.RightMotor.Update();
 
 			// Update tilt value
-            var previousTilt = this.Tilt;
-			this.Tilt = CalculateTiltAngleFromDistanceSensors(this.FrontDistanceSensor.Distance, this.RearDistanceSensor.Distance);
-            this.AngularVelocity = this.Tilt - previousTilt;
+            this.Displacement = CalculateDisplacementFromEncoders(this.LeftMotor.MeasuredSpeed, this.RightMotor.MeasuredSpeed);
+            this.Angle = CalculateAngleFromDistanceSensors(this.FrontIRSensor.Distance, this.RearIRSensor.Distance);
+            this.AngularVelocity = this.Angle - previousAngle;
 		}
+
+        private double CalculateDisplacementFromEncoders(double left, double right)
+        {
+            throw new NotImplementedException();
+        }
 
 		/// <summary>
 		/// Calculates the tilt angle from distance sensors. 
@@ -98,7 +121,7 @@ namespace Stasis.Software.Netduino
 		/// <param name="front"></param>
 		/// <param name="rear"></param>
 		/// <returns></returns>
-		private double CalculateTiltAngleFromDistanceSensors(double front, double rear)
+		private double CalculateAngleFromDistanceSensors(double front, double rear)
 		{
 			// The calculation is over a triangle ABC
 			// ∠BAC = Angle at the sensors

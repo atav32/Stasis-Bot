@@ -40,7 +40,7 @@ namespace Stasis.Software.Netduino
 		/// Constructor
 		/// </summary>
 		/// <param name="pin"></param>
-		public InfraredDistanceSensor(Cpu.Pin pin, int averagingWindow = 30)
+		public InfraredDistanceSensor(Cpu.Pin pin, int averagingWindow = 10)
 		{
 			this.sensorInput = new AnalogInput(pin);
 			this.averagingFilter = new MovingAverageFilter(averagingWindow);

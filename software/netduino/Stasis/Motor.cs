@@ -22,6 +22,12 @@ namespace Stasis.Software.Netduino
 			}
 		}
 
+        public double MeasuredSpeed
+        {
+            get;
+            private set;
+        }
+
 		/// <summary>
 		/// Gets the current draw for this motor.
 		/// </summary>
@@ -65,9 +71,10 @@ namespace Stasis.Software.Netduino
 		private OutputPort directionOutputB = null;
 
 		/// <summary>
-		/// Current sense pin
+		/// Encoder pin
 		/// </summary>
-		private AnalogInput currentSense = null;
+		private InterruptPort encoder = null;
+
 
 		/// <summary>
 		/// Sets speed to given value. Support function for "Speed" property.
@@ -111,6 +118,13 @@ namespace Stasis.Software.Netduino
 			this.speed = value;
 		}
 
+        public double Update()
+        {
+            throw new NotImplementedException();
+
+            return this.MeasuredSpeed;
+        }
+
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -118,12 +132,19 @@ namespace Stasis.Software.Netduino
 		/// <param name="directionPinA"></param>
 		/// <param name="directionPinB"></param>
 		/// <param name="currentSensePin"></param>
-		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB)
+		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB, Cpu.Pin encoderPin)
 		{
 			this.speedPWM = new PWM(pwmPin);
 			this.directionOutputA = new OutputPort(directionPinA, false);
 			this.directionOutputB = new OutputPort(directionPinB, false);
+            this.encoder = new InterruptPort(encoderPin, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeHigh);
+
+            this.encoder.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
 		}
 
+        void encoder_OnInterrupt(uint data1, uint data2, DateTime time)
+        {
+            throw new NotImplementedException();
+        }
 	}
 }

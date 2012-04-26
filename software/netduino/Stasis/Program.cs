@@ -16,8 +16,8 @@ namespace Stasis.Software.Netduino
 		{
 	
 			// Motors
-			Motor motorA = new Motor(Pins.GPIO_PIN_D10, Pins.GPIO_PIN_D12, Pins.GPIO_PIN_D11);
-			Motor motorB = new Motor(Pins.GPIO_PIN_D9, Pins.GPIO_PIN_D7, Pins.GPIO_PIN_D8);
+			Motor motorA = new Motor(Pins.GPIO_PIN_D10, Pins.GPIO_PIN_D12, Pins.GPIO_PIN_D11, );
+			Motor motorB = new Motor(Pins.GPIO_PIN_D9, Pins.GPIO_PIN_D7, Pins.GPIO_PIN_D8, );
             motorA.Reversed = true;
             motorB.Reversed = true;
 
