@@ -19,12 +19,9 @@ namespace Stasis.Software.Netduino
         private double sinAnglePIDOutput = 0.0;					// dummy varaible for sin(angle PID output)
 		private double sinAnglularVelocityPIDOutput = 0.0;      // dummy varaible for sin(angular velocity PID output)
 
-        /// <summary>
-        /// PID for motor speed control
-        /// </summary>
-        private PID anglePID = new PID(proportionalConstant: 0.25);            // Current value for nonlinear sine output 
-        private PID angularVelocityPID = new PID(proportionalConstant: 2);
-
+        // Median filteres to remove 
+        private MedianFilter displacementFilter = new MedianFilter(3);
+        private MedianFilter velocityFilter = new MedianFilter(3);
         private MedianFilter angleIRFilter = new MedianFilter(3);
         private MedianFilter angularVelocityIRFilter = new MedianFilter(3);
         private MedianFilter accelFilter = new MedianFilter(3);
@@ -37,25 +34,31 @@ namespace Stasis.Software.Netduino
 			get;
 			private set;
 		}
-		
-        /// <summary>
-        /// Gain of angle PID controller
-        /// </summary>
-        public double Input1Gain
+
+        public PID DisplacementPID
         {
             get;
             private set;
         }
 
-        /// <summary>
-        /// Gain of angular velocity PID controller
-        /// </summary>
-        public double Input2Gain
+        public PID VelocityPID
         {
             get;
             private set;
         }
-		
+     
+        public PID AnglePID
+        {
+            get;
+            private set;
+        }
+
+        public PID AngularVelocityPID
+        {
+            get;
+            private set;
+        }
+
 		/// <summary>
 		/// Gets the average (over 1 second) loop speed in iterations per second
 		/// </summary>
@@ -80,13 +83,30 @@ namespace Stasis.Software.Netduino
 		/// Constructor
 		/// </summary>
 		/// <param name="bot"></param>
-		public StasisController(StasisRobot bot, double angleSetPoint = 91.75, double angularVelocitySetPoint = 0.0, double input1Gain = 0.5, double input2Gain = 75.0)
+		public StasisController(StasisRobot bot, 
+                                double displacementSetPoint = 0.0,
+                                double angleSetPoint = 91.75,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+                                double velocitySetPoint = 0.0,
+                                double angularVelocitySetPoint = 0.0, 
+                                double displacementProportionalValue = 1,
+                                double velocityProportionalValue = 2.0,
+                                double angleProportionalValue = 55.5,
+                                double angularVelocityProportionalValue = 8.0)
 		{
 			this.Robot = bot;
-            this.anglePID.SetPoint = angleSetPoint;        // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
-            this.angularVelocityPID.SetPoint = angularVelocitySetPoint;
-            this.Input1Gain = input1Gain;
-            this.Input2Gain = input2Gain;
+
+            // PID setpoints
+            this.DisplacementPID.SetPoint = displacementSetPoint;
+            this.VelocityPID.SetPoint = velocitySetPoint;
+            this.AnglePID.SetPoint = angleSetPoint;        
+            this.AngularVelocityPID.SetPoint = angularVelocitySetPoint;
+            
+            // PID gains
+            this.DisplacementPID.ProportionalConstant = displacementProportionalValue;
+            this.VelocityPID.ProportionalConstant = velocityProportionalValue;
+            this.AnglePID.ProportionalConstant = angleProportionalValue;
+            this.AngularVelocityPID.ProportionalConstant = angularVelocityProportionalValue;
+
 			this.wifiMonitor.MessageReceived += new WiFiMonitor.MessageReceivedEventHandler(WifiMonitor_MessageReceived);
 		}
 
@@ -99,22 +119,22 @@ namespace Stasis.Software.Netduino
 					if (e.Message.Values[0] == 1)
 					{
 						// Set PID stuff for angle PID controller
-						this.anglePID.ProportionalConstant = e.Message.Values[1];
-						this.anglePID.IntegrationConstant = e.Message.Values[2];
-						this.anglePID.DerivativeConstant = e.Message.Values[3];
-						this.anglePID.SetPoint = e.Message.Values[4];
-						this.Input1Gain = e.Message.Values[5];
-						this.anglePID.Reset();
+						this.AnglePID.ProportionalConstant = e.Message.Values[1];
+						this.AnglePID.IntegrationConstant = e.Message.Values[2];
+						this.AnglePID.DerivativeConstant = e.Message.Values[3];
+						this.AnglePID.SetPoint = e.Message.Values[4];
+						// this.Angle = e.Message.Values[5];
+						this.AnglePID.Reset();
 					}
 					else if (e.Message.Values[0] == 2)
 					{
 						// Set PID stuff for delta Angle PID controller
-						this.angularVelocityPID.ProportionalConstant = e.Message.Values[1];
-						this.angularVelocityPID.IntegrationConstant = e.Message.Values[2];
-						this.angularVelocityPID.DerivativeConstant = e.Message.Values[3];
-						this.angularVelocityPID.SetPoint = e.Message.Values[4];
-						this.Input2Gain = e.Message.Values[5];
-						this.angularVelocityPID.Reset();
+						this.AngularVelocityPID.ProportionalConstant = e.Message.Values[1];
+						this.AngularVelocityPID.IntegrationConstant = e.Message.Values[2];
+						this.AngularVelocityPID.DerivativeConstant = e.Message.Values[3];
+						this.AngularVelocityPID.SetPoint = e.Message.Values[4];
+						// this.AngleGain = e.Message.Values[5];
+						this.AngularVelocityPID.Reset();
 					}
 				}
 			}
@@ -123,12 +143,12 @@ namespace Stasis.Software.Netduino
 				if (e.Message.Values[0] == 1)
 				{
 					// Send out PID values for Angle PID
-					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 1, anglePID.ProportionalConstant, anglePID.IntegrationConstant, anglePID.DerivativeConstant, anglePID.SetPoint, this.Input1Gain }));
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 1, AnglePID.ProportionalConstant, AnglePID.IntegrationConstant, AnglePID.DerivativeConstant, AnglePID.SetPoint, 0.0}));
 				}
 				else if (e.Message.Values[0] == 2)
 				{
 					// Send out PID values for delta angle PID
-					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 2, angularVelocityPID.ProportionalConstant, angularVelocityPID.IntegrationConstant, angularVelocityPID.DerivativeConstant, angularVelocityPID.SetPoint, this.Input2Gain }));
+					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 2, AngularVelocityPID.ProportionalConstant, AngularVelocityPID.IntegrationConstant, AngularVelocityPID.DerivativeConstant, AngularVelocityPID.SetPoint, 0.0}));
 				}
 			}
 		}
@@ -149,12 +169,12 @@ namespace Stasis.Software.Netduino
 				this.Robot.Update();
 
 				// Add to filter
-				averagingFilter.AddValue(this.Robot.Tilt);
+				averagingFilter.AddValue(this.Robot.Angle);
 			}
 
 			// Set point for the PID is the tilt angle when the robot
 			// is vertical.
-            this.anglePID.SetPoint = averagingFilter.Value;
+            this.AnglePID.SetPoint = averagingFilter.Value;
 		}
 
 		/// <summary>
@@ -169,22 +189,22 @@ namespace Stasis.Software.Netduino
 			this.Robot.Update();
 
 			// Filter tilt values
-			this.angleIRFilter.AddValue(this.Robot.Tilt);               // takes 5 fps
+            this.displacementFilter.AddValue(this.Robot.Displacement);
+            this.velocityFilter.AddValue(this.Robot.Velocity);
+			this.angleIRFilter.AddValue(this.Robot.Angle);               // takes 5 fps
             this.angularVelocityIRFilter.AddValue(this.Robot.AngularVelocity);
 
 			// Update the PID 
-			this.anglePID.Update(this.angleIRFilter.Value);
-            this.angularVelocityPID.Update(this.angularVelocityIRFilter.Value);
-
-			// Apply Nonlinear Map
-			sinAnglePIDOutput = maxMotorOutput * XMath.Sin(this.anglePID.Output / 180 * System.Math.PI);     // takes 5 fps
-			sinAnglularVelocityPIDOutput = maxMotorOutput * XMath.Sin(this.angularVelocityPID.Output / 180 * System.Math.PI);     // takes 5 fps
+            this.DisplacementPID.Update(this.displacementFilter.Value);
+            this.VelocityPID.Update(this.velocityFilter.Value);
+			this.AnglePID.Update(this.angleIRFilter.Value);
+            this.AngularVelocityPID.Update(this.angularVelocityIRFilter.Value);
 
 			// Only bother updating motors if tilt is within a certain range of vertical
-			if (this.angleIRFilter.Value > (this.anglePID.SetPoint - saturation) && this.angleIRFilter.Value < (this.anglePID.SetPoint + saturation))
+			if (this.angleIRFilter.Value > (this.AnglePID.SetPoint - saturation) && this.angleIRFilter.Value < (this.AnglePID.SetPoint + saturation))
 			{
                 // Update with combined output of angle and angular velocity control
-				motorValue = (int)(System.Math.Round(sinAnglePIDOutput) * this.Input1Gain + this.angularVelocityPID.Output * this.Input2Gain);
+				motorValue = (int)(this.DisplacementPID.Output + this.VelocityPID.Output + this.AnglePID.Output + this.AngularVelocityPID.Output);
 			}
 
             // Set Motor Speed
@@ -200,7 +220,7 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-					Debug.Print(this.LoopSpeed.ToString());
+					Debug.Print("DATA," + this.Robot.Displacement + "," + this.Robot.Angle);
 					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
