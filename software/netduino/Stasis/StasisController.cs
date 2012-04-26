@@ -95,6 +95,12 @@ namespace Stasis.Software.Netduino
 		{
 			this.Robot = bot;
 
+			// PID
+			this.DisplacementPID = new PID();
+			this.VelocityPID = new PID();
+			this.AnglePID = new PID();
+			this.AngularVelocityPID = new PID();
+
             // PID setpoints
             this.DisplacementPID.SetPoint = displacementSetPoint;
             this.VelocityPID.SetPoint = velocitySetPoint;
@@ -114,42 +120,58 @@ namespace Stasis.Software.Netduino
 		{
 			if (e.Message.Type == WiFiMonitor.MessageType.SetPID)
 			{
-				if (e.Message.Values.Length >= 5)
+				if (e.Message.Values.Length >= 16)
 				{
-					if (e.Message.Values[0] == 1)
-					{
-						// Set PID stuff for angle PID controller
-						this.AnglePID.ProportionalConstant = e.Message.Values[1];
-						this.AnglePID.IntegrationConstant = e.Message.Values[2];
-						this.AnglePID.DerivativeConstant = e.Message.Values[3];
-						this.AnglePID.SetPoint = e.Message.Values[4];
-						// this.Angle = e.Message.Values[5];
-						this.AnglePID.Reset();
-					}
-					else if (e.Message.Values[0] == 2)
-					{
-						// Set PID stuff for delta Angle PID controller
-						this.AngularVelocityPID.ProportionalConstant = e.Message.Values[1];
-						this.AngularVelocityPID.IntegrationConstant = e.Message.Values[2];
-						this.AngularVelocityPID.DerivativeConstant = e.Message.Values[3];
-						this.AngularVelocityPID.SetPoint = e.Message.Values[4];
-						// this.AngleGain = e.Message.Values[5];
-						this.AngularVelocityPID.Reset();
-					}
+					// Set PID stuff for angle PID controller
+					this.AnglePID.ProportionalConstant = e.Message.Values[0];
+					this.AnglePID.IntegrationConstant = e.Message.Values[1];
+					this.AnglePID.DerivativeConstant = e.Message.Values[2];
+					this.AnglePID.SetPoint = e.Message.Values[3];
+					this.AnglePID.Reset();
+						
+					// Set PID stuff for delta Angle PID controller
+					this.AngularVelocityPID.ProportionalConstant = e.Message.Values[4];
+					this.AngularVelocityPID.IntegrationConstant = e.Message.Values[5];
+					this.AngularVelocityPID.DerivativeConstant = e.Message.Values[6];
+					this.AngularVelocityPID.SetPoint = e.Message.Values[7];
+					this.AngularVelocityPID.Reset();
+
+					// Set PID stuff for angle PID controller
+					this.DisplacementPID.ProportionalConstant = e.Message.Values[8];
+					this.DisplacementPID.IntegrationConstant = e.Message.Values[9];
+					this.DisplacementPID.DerivativeConstant = e.Message.Values[10];
+					this.DisplacementPID.SetPoint = e.Message.Values[11];
+					this.DisplacementPID.Reset();
+						
+					// Set PID stuff for delta Angle PID controller
+					this.VelocityPID.ProportionalConstant = e.Message.Values[12];
+					this.VelocityPID.IntegrationConstant = e.Message.Values[13];
+					this.VelocityPID.DerivativeConstant = e.Message.Values[14];
+					this.VelocityPID.SetPoint = e.Message.Values[15];
+					this.VelocityPID.Reset();
 				}
 			}
 			if (e.Message.Type == WiFiMonitor.MessageType.GetPID || e.Message.Type == WiFiMonitor.MessageType.SetPID)
 			{
-				if (e.Message.Values[0] == 1)
-				{
-					// Send out PID values for Angle PID
-					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 1, AnglePID.ProportionalConstant, AnglePID.IntegrationConstant, AnglePID.DerivativeConstant, AnglePID.SetPoint, 0.0}));
-				}
-				else if (e.Message.Values[0] == 2)
-				{
-					// Send out PID values for delta angle PID
-					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 2, AngularVelocityPID.ProportionalConstant, AngularVelocityPID.IntegrationConstant, AngularVelocityPID.DerivativeConstant, AngularVelocityPID.SetPoint, 0.0}));
-				}
+				this.wifiMonitor.SendMessage(
+					new WiFiMonitor.Message(WiFiMonitor.MessageType.GetPID, new double[] { 
+						AnglePID.ProportionalConstant, 
+						AnglePID.IntegrationConstant, 
+						AnglePID.DerivativeConstant, 
+						AnglePID.SetPoint,
+						AngularVelocityPID.ProportionalConstant, 
+						AngularVelocityPID.IntegrationConstant, 
+						AngularVelocityPID.DerivativeConstant, 
+						AngularVelocityPID.SetPoint,
+						DisplacementPID.ProportionalConstant, 
+						DisplacementPID.IntegrationConstant, 
+						DisplacementPID.DerivativeConstant, 
+						DisplacementPID.SetPoint,
+						VelocityPID.ProportionalConstant, 
+						VelocityPID.IntegrationConstant, 
+						VelocityPID.DerivativeConstant, 
+						VelocityPID.SetPoint,
+					}));
 			}
 		}
 
@@ -208,7 +230,7 @@ namespace Stasis.Software.Netduino
 			}
 
             // Set Motor Speed
-			this.Robot.LeftMotor.Speed = this.Robot.RightMotor.Speed = motorValue;
+			this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
 
 			// Toggle Debug display
 			if (true)
@@ -220,7 +242,8 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-					Debug.Print("DATA," + this.Robot.Displacement + "," + this.Robot.Angle);
+					//Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
+					Debug.Print("DATA," + this.Robot.LeftMotor.Velocity + "," + this.Robot.RightMotor.Velocity + "," + this.Robot.Angle + "," + this.Robot.AngularVelocity);
 					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else

@@ -10,23 +10,35 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Gets or sets the speed between -100 and 100
 		/// </summary>
-		public int Speed
+		public int Velocity
 		{
 			get
 			{
-				return this.speed;
+				return this.velocity;
 			}
 			set
 			{
-				this.SetSpeed(value);
+				this.SetVelocity(value);
 			}
 		}
 
-        public double MeasuredSpeed
+		/// <summary>
+		/// Gets the average velocity since last call to Update
+		/// </summary>
+        public double MeasuredVelocity
         {
             get;
             private set;
         }
+
+		/// <summary>
+		/// Gets the displacement since the last call to Update
+		/// </summary>
+		public double MeasuredDisplacement
+		{
+			get;
+			private set;
+		}
 
 		/// <summary>
 		/// Gets the current draw for this motor.
@@ -53,7 +65,7 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Speed between [-100, 100]
 		/// </summary>
-		private int speed = 0;
+		private int velocity = 0;
 
 		/// <summary>
 		/// PWM port for speed control
@@ -71,16 +83,30 @@ namespace Stasis.Software.Netduino
 		private OutputPort directionOutputB = null;
 
 		/// <summary>
-		/// Encoder pin
+		/// Encoder channel A input
 		/// </summary>
-		private InterruptPort encoder = null;
+		private InterruptPort encoderChannelA = null;
 
+		/// <summary>
+		/// Encoder channel B input
+		/// </summary>
+		private InputPort encoderChannelB = null;
+
+		/// <summary>
+		/// Current encoder direction
+		/// </summary>
+		private double encoderCounter = 0;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private DateTime lastUpdateDateTime = DateTime.MinValue;
 
 		/// <summary>
 		/// Sets speed to given value. Support function for "Speed" property.
 		/// </summary>
 		/// <param name="value"></param>
-		private void SetSpeed(int value)
+		private void SetVelocity(int value)
 		{
 			// Are we reversed?
 			if (this.Reversed)
@@ -115,15 +141,8 @@ namespace Stasis.Software.Netduino
 			this.speedPWM.SetDutyCycle(val);
 
 			// Save speed
-			this.speed = value;
+			this.velocity = value;
 		}
-
-        public double Update()
-        {
-            throw new NotImplementedException();
-
-            return this.MeasuredSpeed;
-        }
 
 		/// <summary>
 		/// Constructor
@@ -132,19 +151,67 @@ namespace Stasis.Software.Netduino
 		/// <param name="directionPinA"></param>
 		/// <param name="directionPinB"></param>
 		/// <param name="currentSensePin"></param>
-		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB, Cpu.Pin encoderPin)
+		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB, Cpu.Pin encoderA, Cpu.Pin encoderB)
 		{
 			this.speedPWM = new PWM(pwmPin);
 			this.directionOutputA = new OutputPort(directionPinA, false);
 			this.directionOutputB = new OutputPort(directionPinB, false);
-            this.encoder = new InterruptPort(encoderPin, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeHigh);
+            this.encoderChannelA = new InterruptPort(encoderA, false, Port.ResistorMode.PullUp, Port.InterruptMode.InterruptEdgeHigh);
+			this.encoderChannelB = new InputPort(encoderB, false, Port.ResistorMode.Disabled);
 
-            this.encoder.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
+			//this.encoderChannelA.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
+
+			this.MeasuredVelocity = this.MeasuredDisplacement = 0;
 		}
 
-        void encoder_OnInterrupt(uint data1, uint data2, DateTime time)
+		/// <summary>
+		/// Update state for the motor
+		/// </summary>
+		/// <returns></returns>
+		public void Update()
+		{
+			if (this.lastUpdateDateTime != DateTime.MinValue)
+			{
+				var circumference = 0.037698;
+				this.MeasuredDisplacement = (encoderCounter / 6533.0) * circumference;
+
+				var timeDiff = DateTime.Now - this.lastUpdateDateTime;
+				this.MeasuredVelocity = this.MeasuredDisplacement / ((double)timeDiff.Ticks / (double)TimeSpan.TicksPerSecond);
+			}
+
+			this.lastUpdateDateTime = DateTime.Now;
+		}
+
+		/// <summary>
+		/// Handle encoder shit
+		/// </summary>
+		/// <param name="data1"></param>
+		/// <param name="data2"></param>
+		/// <param name="time"></param>
+        void encoder_OnInterrupt(uint port, uint state, DateTime time)
         {
-            throw new NotImplementedException();
+			if (state == 0)
+			{
+				if (this.encoderChannelB.Read() == true)
+				{
+					encoderCounter++;
+				}
+				else
+				{
+					encoderCounter--;
+				}
+			}
+			else
+			{
+				if (this.encoderChannelB.Read() == true)
+				{
+					encoderCounter--;
+				}
+				else
+				{
+					encoderCounter++;
+				}
+			}
         }
 	}
 }

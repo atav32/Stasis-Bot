@@ -45,12 +45,18 @@ namespace Stasis.Software.Netduino
 			private set;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
         public double Displacement
         {
             get;
             private set;
         }
 
+		/// <summary>
+		/// 
+		/// </summary>
         public double Velocity
         {
             get;
@@ -98,22 +104,18 @@ namespace Stasis.Software.Netduino
             var previousAngle = this.Angle;
             var previousDisplacement = this.Displacement;
 
-			// Update sensors
+			// Update sensors + motors
 			this.FrontIRSensor.Update();
 			this.RearIRSensor.Update();
             this.LeftMotor.Update();
             this.RightMotor.Update();
 
 			// Update tilt value
-            this.Displacement = CalculateDisplacementFromEncoders(this.LeftMotor.MeasuredSpeed, this.RightMotor.MeasuredSpeed);
+			this.Displacement = this.LeftMotor.MeasuredDisplacement;
+			this.Velocity = this.LeftMotor.MeasuredVelocity;
             this.Angle = CalculateAngleFromDistanceSensors(this.FrontIRSensor.Distance, this.RearIRSensor.Distance);
             this.AngularVelocity = this.Angle - previousAngle;
 		}
-
-        private double CalculateDisplacementFromEncoders(double left, double right)
-        {
-            throw new NotImplementedException();
-        }
 
 		/// <summary>
 		/// Calculates the tilt angle from distance sensors. 

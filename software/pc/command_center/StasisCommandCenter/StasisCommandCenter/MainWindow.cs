@@ -58,14 +58,22 @@ namespace StasisCommandCenter
 			this.pid1PValue.DataBindings.Add("Value", Properties.Settings.Default, "PID1_P", false, DataSourceUpdateMode.OnPropertyChanged);
 			this.pid1IValue.DataBindings.Add("Value", Properties.Settings.Default, "PID1_I", false, DataSourceUpdateMode.OnPropertyChanged);
 			this.pid1DValue.DataBindings.Add("Value", Properties.Settings.Default, "PID1_D", false, DataSourceUpdateMode.OnPropertyChanged);
-			this.pid1GainValue.DataBindings.Add("Value", Properties.Settings.Default, "PID1_Gain", false, DataSourceUpdateMode.OnPropertyChanged);
 			this.pid1SetPointValue.DataBindings.Add("Value", Properties.Settings.Default, "PID1_SetPoint", false, DataSourceUpdateMode.OnPropertyChanged);
 
 			this.pid2PValue.DataBindings.Add("Value", Properties.Settings.Default, "PID2_P", false, DataSourceUpdateMode.OnPropertyChanged);
 			this.pid2IValue.DataBindings.Add("Value", Properties.Settings.Default, "PID2_I", false, DataSourceUpdateMode.OnPropertyChanged);
 			this.pid2DValue.DataBindings.Add("Value", Properties.Settings.Default, "PID2_D", false, DataSourceUpdateMode.OnPropertyChanged);
-			this.pid2GainValue.DataBindings.Add("Value", Properties.Settings.Default, "PID2_Gain", false, DataSourceUpdateMode.OnPropertyChanged);
 			this.pid2SetPointValue.DataBindings.Add("Value", Properties.Settings.Default, "PID2_SetPoint", false, DataSourceUpdateMode.OnPropertyChanged);
+
+			this.pid3PValue.DataBindings.Add("Value", Properties.Settings.Default, "PID3_P", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.pid3IValue.DataBindings.Add("Value", Properties.Settings.Default, "PID3_I", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.pid3DValue.DataBindings.Add("Value", Properties.Settings.Default, "PID3_D", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.pid3SetPointValue.DataBindings.Add("Value", Properties.Settings.Default, "PID3_SetPoint", false, DataSourceUpdateMode.OnPropertyChanged);
+
+			this.pid4PValue.DataBindings.Add("Value", Properties.Settings.Default, "PID4_P", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.pid4IValue.DataBindings.Add("Value", Properties.Settings.Default, "PID4_I", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.pid4DValue.DataBindings.Add("Value", Properties.Settings.Default, "PID4_D", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.pid4SetPointValue.DataBindings.Add("Value", Properties.Settings.Default, "PID4_SetPoint", false, DataSourceUpdateMode.OnPropertyChanged);
 
 			Properties.Settings.Default.PropertyChanged += delegate
 			{
@@ -176,24 +184,30 @@ namespace StasisCommandCenter
 			{
 				this.Invoke(new MethodInvoker(delegate
 				{
-					if (msg.Values[0] == 1)
-					{
-						this.pid1PValue.Value = (decimal)msg.Values[1];
-						this.pid1IValue.Value = (decimal)msg.Values[2];
-						this.pid1DValue.Value = (decimal)msg.Values[3];
-						this.pid1SetPointValue.Value = (decimal)msg.Values[4];
-						this.pid1GainValue.Value = (decimal)msg.Values[5];
-						this.pid1PValue.BackColor = this.pid1IValue.BackColor = this.pid1DValue.BackColor = this.pid1SetPointValue.BackColor = this.pid1GainValue.BackColor = Color.YellowGreen;
-					}
-					else if (msg.Values[0] == 2)
-					{
-						this.pid2PValue.Value = (decimal)msg.Values[1];
-						this.pid2IValue.Value = (decimal)msg.Values[2];
-						this.pid2DValue.Value = (decimal)msg.Values[3];
-						this.pid2SetPointValue.Value = (decimal)msg.Values[4];
-						this.pid2GainValue.Value = (decimal)msg.Values[5];
-						this.pid2PValue.BackColor = this.pid2IValue.BackColor = this.pid2DValue.BackColor = this.pid2SetPointValue.BackColor = this.pid2GainValue.BackColor = Color.YellowGreen;
-					}
+					this.pid1PValue.Value = (decimal)msg.Values[0];
+					this.pid1IValue.Value = (decimal)msg.Values[1];
+					this.pid1DValue.Value = (decimal)msg.Values[2];
+					this.pid1SetPointValue.Value = (decimal)msg.Values[3];
+
+					this.pid2PValue.Value = (decimal)msg.Values[4];
+					this.pid2IValue.Value = (decimal)msg.Values[5];
+					this.pid2DValue.Value = (decimal)msg.Values[6];
+					this.pid2SetPointValue.Value = (decimal)msg.Values[7];
+
+					this.pid3PValue.Value = (decimal)msg.Values[8];
+					this.pid3IValue.Value = (decimal)msg.Values[9];
+					this.pid3DValue.Value = (decimal)msg.Values[10];
+					this.pid3SetPointValue.Value = (decimal)msg.Values[11];
+
+					this.pid4PValue.Value = (decimal)msg.Values[12];
+					this.pid4IValue.Value = (decimal)msg.Values[13];
+					this.pid4DValue.Value = (decimal)msg.Values[14];
+					this.pid4SetPointValue.Value = (decimal)msg.Values[15];
+
+					this.pid1PValue.BackColor = this.pid1IValue.BackColor = this.pid1DValue.BackColor = this.pid1SetPointValue.BackColor = Color.YellowGreen;
+					this.pid2PValue.BackColor = this.pid2IValue.BackColor = this.pid2DValue.BackColor = this.pid2SetPointValue.BackColor = Color.YellowGreen;
+					this.pid3PValue.BackColor = this.pid3IValue.BackColor = this.pid3DValue.BackColor = this.pid3SetPointValue.BackColor = Color.YellowGreen;
+					this.pid4PValue.BackColor = this.pid4IValue.BackColor = this.pid4DValue.BackColor = this.pid4SetPointValue.BackColor = Color.YellowGreen;
 				}));
 			}
 		}
@@ -222,7 +236,7 @@ namespace StasisCommandCenter
 		/// <param name="e"></param>
 		private void Monitor_Disconnected(object sender, EventArgs e)
 		{
-			this.anglePIDControls.Enabled = this.angularVelocityPIDControls.Enabled = false;
+			this.leftPanel.Enabled = false;
 			this.ipAddressTextbox.Enabled = this.connectButton.Enabled = true;
 			this.disconnectButton.Enabled = false;
 		}
@@ -234,7 +248,7 @@ namespace StasisCommandCenter
 		/// <param name="e"></param>
 		private void Monitor_Connected(object sender, EventArgs e)
 		{
-			this.anglePIDControls.Enabled = this.angularVelocityPIDControls.Enabled = true;
+			this.leftPanel.Enabled = true;
 			this.ipAddressTextbox.Enabled = this.connectButton.Enabled = false;
 			this.disconnectButton.Enabled = true;
 
@@ -258,58 +272,6 @@ namespace StasisCommandCenter
 		private void disconnectButton_Click(object sender, EventArgs e)
 		{
 			this.wifiMonitor.Disconnect();
-		}
-
-		/// <summary>
-		/// Set PID values for the main PID controller
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void setPID1Button_Click(object sender, EventArgs e)
-		{
-			double p = (double)this.pid1PValue.Value;
-			double i = (double)this.pid1IValue.Value;
-			double d = (double)this.pid1DValue.Value;
-			double s = (double)this.pid1SetPointValue.Value;
-			double g = (double)this.pid1GainValue.Value;
-			this.wifiMonitor.SendMessage(new WiFiMonitorConnection.Message(WiFiMonitorConnection.MessageType.SetPID, new double[] { 1, p, i, d, s, g }));
-			this.pid1PValue.BackColor = this.pid1IValue.BackColor = this.pid1DValue.BackColor = this.pid1SetPointValue.BackColor = this.pid1GainValue.BackColor = Color.OrangeRed;
-		}
-
-		/// <summary>
-		/// Gets PID values for the main PID controller
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void getPID1Button_Click(object sender, EventArgs e)
-		{
-			this.wifiMonitor.SendMessage(new WiFiMonitorConnection.Message(WiFiMonitorConnection.MessageType.GetPID, new double[] { 1 }));
-		}
-
-		/// <summary>
-		/// Set PID values for the delta Angle PID controller
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void setPID2Button_Click(object sender, EventArgs e)
-		{
-			double p = (double)this.pid2PValue.Value;
-			double i = (double)this.pid2IValue.Value;
-			double d = (double)this.pid2DValue.Value;
-			double s = (double)this.pid2SetPointValue.Value;
-			double g = (double)this.pid2GainValue.Value;
-			this.wifiMonitor.SendMessage(new WiFiMonitorConnection.Message(WiFiMonitorConnection.MessageType.SetPID, new double[] { 2, p, i, d, s, g }));
-			this.pid2PValue.BackColor = this.pid2IValue.BackColor = this.pid2DValue.BackColor = this.pid2SetPointValue.BackColor = this.pid2GainValue.BackColor = Color.OrangeRed;
-		}
-
-		/// <summary>
-		/// Gets PID values for the delta Angle PID controller
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void getPID2Button_Click(object sender, EventArgs e)
-		{
-			this.wifiMonitor.SendMessage(new WiFiMonitorConnection.Message(WiFiMonitorConnection.MessageType.GetPID, new double[] { 2 }));
 		}
 
 		private void connectToUSBButton_Click(object sender, EventArgs e)
@@ -346,6 +308,40 @@ namespace StasisCommandCenter
 			this.stopLoggingButton.Enabled = false;
 
 			this.logWriter = null;
+		}
+
+		private void setPIDButton_Click(object sender, EventArgs e)
+		{
+			double p1 = (double)this.pid1PValue.Value;
+			double i1 = (double)this.pid1IValue.Value;
+			double d1 = (double)this.pid1DValue.Value;
+			double s1 = (double)this.pid1SetPointValue.Value;
+			
+			double p2 = (double)this.pid2PValue.Value;
+			double i2 = (double)this.pid2IValue.Value;
+			double d2 = (double)this.pid2DValue.Value;
+			double s2 = (double)this.pid2SetPointValue.Value;
+			
+			double p3 = (double)this.pid3PValue.Value;
+			double i3 = (double)this.pid3IValue.Value;
+			double d3 = (double)this.pid3DValue.Value;
+			double s3 = (double)this.pid3SetPointValue.Value;
+			
+			double p4 = (double)this.pid4PValue.Value;
+			double i4 = (double)this.pid4IValue.Value;
+			double d4 = (double)this.pid4DValue.Value;
+			double s4 = (double)this.pid4SetPointValue.Value;
+
+			this.wifiMonitor.SendMessage(new WiFiMonitorConnection.Message(WiFiMonitorConnection.MessageType.SetPID, new double[] { p1, i1, d1, s1, p2, i2, d2, s2, p3, i3, d3, s3, p4, i4, d4, s4 }));
+			this.pid1PValue.BackColor = this.pid1IValue.BackColor = this.pid1DValue.BackColor = this.pid1SetPointValue.BackColor = Color.OrangeRed;
+			this.pid2PValue.BackColor = this.pid2IValue.BackColor = this.pid2DValue.BackColor = this.pid2SetPointValue.BackColor = Color.OrangeRed;
+			this.pid3PValue.BackColor = this.pid3IValue.BackColor = this.pid3DValue.BackColor = this.pid3SetPointValue.BackColor = Color.OrangeRed;
+			this.pid4PValue.BackColor = this.pid4IValue.BackColor = this.pid4DValue.BackColor = this.pid4SetPointValue.BackColor = Color.OrangeRed;
+		}
+
+		private void getPIDButton_Click(object sender, EventArgs e)
+		{
+
 		}
 	}
 }
