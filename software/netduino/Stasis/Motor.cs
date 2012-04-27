@@ -95,7 +95,7 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Current encoder direction
 		/// </summary>
-		private double encoderCounter = 0;
+		private int encoderCounter = 0;
 
 		/// <summary>
 		/// 
@@ -156,10 +156,10 @@ namespace Stasis.Software.Netduino
 			this.speedPWM = new PWM(pwmPin);
 			this.directionOutputA = new OutputPort(directionPinA, false);
 			this.directionOutputB = new OutputPort(directionPinB, false);
-            this.encoderChannelA = new InterruptPort(encoderA, false, Port.ResistorMode.PullUp, Port.InterruptMode.InterruptEdgeHigh);
+            this.encoderChannelA = new InterruptPort(encoderA, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeBoth);
 			this.encoderChannelB = new InputPort(encoderB, false, Port.ResistorMode.Disabled);
 
-			//this.encoderChannelA.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
+			this.encoderChannelA.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
 
 			this.MeasuredVelocity = this.MeasuredDisplacement = 0;
 		}
@@ -173,12 +173,13 @@ namespace Stasis.Software.Netduino
 			if (this.lastUpdateDateTime != DateTime.MinValue)
 			{
 				var circumference = 0.037698;
-				this.MeasuredDisplacement = (encoderCounter / 6533.0) * circumference;
+				this.MeasuredDisplacement = (this.encoderCounter / 65.330) * circumference;
 
 				var timeDiff = DateTime.Now - this.lastUpdateDateTime;
 				this.MeasuredVelocity = this.MeasuredDisplacement / ((double)timeDiff.Ticks / (double)TimeSpan.TicksPerSecond);
 			}
 
+			this.encoderCounter = 0;
 			this.lastUpdateDateTime = DateTime.Now;
 		}
 
@@ -190,27 +191,21 @@ namespace Stasis.Software.Netduino
 		/// <param name="time"></param>
         void encoder_OnInterrupt(uint port, uint state, DateTime time)
         {
-			if (state == 0)
+			if (this.encoderChannelA.Read() == this.encoderChannelB.Read())
 			{
-				if (this.encoderChannelB.Read() == true)
+				if (this.Reversed)
 				{
-					encoderCounter++;
+					Debug.Print("++");
 				}
-				else
-				{
-					encoderCounter--;
-				}
+				encoderCounter++;
 			}
 			else
 			{
-				if (this.encoderChannelB.Read() == true)
+				if (this.Reversed)
 				{
-					encoderCounter--;
+					Debug.Print("--");
 				}
-				else
-				{
-					encoderCounter++;
-				}
+				encoderCounter--;
 			}
         }
 	}

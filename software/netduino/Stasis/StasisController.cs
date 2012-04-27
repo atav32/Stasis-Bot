@@ -230,7 +230,9 @@ namespace Stasis.Software.Netduino
 			}
 
             // Set Motor Speed
-			this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
+			this.Robot.LeftMotor.Velocity = 100;
+			this.Robot.RightMotor.Velocity = 100;
+			//this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
 
 			// Toggle Debug display
 			if (true)
@@ -242,8 +244,8 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-					//Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
-					Debug.Print("DATA," + this.Robot.LeftMotor.Velocity + "," + this.Robot.RightMotor.Velocity + "," + this.Robot.Angle + "," + this.Robot.AngularVelocity);
+					Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
+					//Debug.Print("DATA," + this.Robot.LeftMotor.Velocity + "," + this.Robot.RightMotor.Velocity + "," + this.Robot.Angle + "," + this.Robot.AngularVelocity);
 					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
