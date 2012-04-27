@@ -2,6 +2,7 @@
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
 using XMath = ElzeKool.exMath;
+using Stasis.Software.Netduino.Sensors;
 
 namespace Stasis.Software.Netduino
 {
@@ -84,6 +85,7 @@ namespace Stasis.Software.Netduino
 		/// </summary>
 		/// <param name="leftMotor"></param>
 		/// <param name="rightMotor"></param>
+		/// <param name="encoders"></param>
 		/// <param name="frontRanger"></param>
 		/// <param name="rearRanger"></param>
 		public StasisRobot(Motor leftMotor, Motor rightMotor, InfraredDistanceSensor frontRanger, InfraredDistanceSensor rearRanger)

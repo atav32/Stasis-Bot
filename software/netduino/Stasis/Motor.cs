@@ -85,17 +85,22 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Encoder channel A input
 		/// </summary>
-		private InterruptPort encoderChannelA = null;
+		private InterruptPort encoderPulsePin = null;
 
 		/// <summary>
 		/// Encoder channel B input
 		/// </summary>
-		private InputPort encoderChannelB = null;
+		private InterruptPort encoderDirectionPin = null;
 
 		/// <summary>
-		/// Current encoder direction
+		/// Current encoder count
 		/// </summary>
 		private int encoderCounter = 0;
+
+		/// <summary>
+		/// Currenct encoder direction
+		/// </summary>
+		private int encoderDirection = 0;
 
 		/// <summary>
 		/// 
@@ -151,16 +156,21 @@ namespace Stasis.Software.Netduino
 		/// <param name="directionPinA"></param>
 		/// <param name="directionPinB"></param>
 		/// <param name="currentSensePin"></param>
-		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB, Cpu.Pin encoderA, Cpu.Pin encoderB)
+		public Motor(Cpu.Pin pwmPin, Cpu.Pin directionPinA, Cpu.Pin directionPinB, Cpu.Pin encoderPulse, Cpu.Pin encoderDirection)
 		{
 			this.speedPWM = new PWM(pwmPin);
 			this.directionOutputA = new OutputPort(directionPinA, false);
 			this.directionOutputB = new OutputPort(directionPinB, false);
-            this.encoderChannelA = new InterruptPort(encoderA, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeBoth);
-			this.encoderChannelB = new InputPort(encoderB, false, Port.ResistorMode.Disabled);
+            this.encoderPulsePin = new InterruptPort(encoderPulse, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeHigh);
+			this.encoderDirectionPin = new InterruptPort(encoderDirection, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeBoth);
 
-			this.encoderChannelA.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
+			// Listen to pulses from teh encoder
+			this.encoderPulsePin.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
 
+			// Listen to direction changes from the encoder
+			this.encoderDirectionPin.OnInterrupt += new NativeEventHandler(encoderDirectionPin_OnInterrupt);
+
+			// Reset velocity and distance
 			this.MeasuredVelocity = this.MeasuredDisplacement = 0;
 		}
 
@@ -179,7 +189,10 @@ namespace Stasis.Software.Netduino
 				this.MeasuredVelocity = this.MeasuredDisplacement / ((double)timeDiff.Ticks / (double)TimeSpan.TicksPerSecond);
 			}
 
+			// Reset encoder counter
 			this.encoderCounter = 0;
+
+			// Save date time for next update
 			this.lastUpdateDateTime = DateTime.Now;
 		}
 
@@ -191,22 +204,21 @@ namespace Stasis.Software.Netduino
 		/// <param name="time"></param>
         void encoder_OnInterrupt(uint port, uint state, DateTime time)
         {
-			if (this.encoderChannelA.Read() == this.encoderChannelB.Read())
+			// Incement counter
+			if (this.encoderDirection == 0)
 			{
-				if (this.Reversed)
-				{
-					Debug.Print("++");
-				}
 				encoderCounter++;
 			}
 			else
 			{
-				if (this.Reversed)
-				{
-					Debug.Print("--");
-				}
 				encoderCounter--;
 			}
         }
+
+		void encoderDirectionPin_OnInterrupt(uint port, uint state, DateTime time)
+		{
+			// Figure out direction
+			encoderDirection = (int)state;
+		}
 	}
 }
