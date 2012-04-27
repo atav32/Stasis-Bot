@@ -24,7 +24,6 @@ namespace Stasis.Software.Netduino
         private MedianFilter velocityFilter = new MedianFilter(3);
         private MedianFilter angleIRFilter = new MedianFilter(3);
         private MedianFilter angularVelocityIRFilter = new MedianFilter(3);
-        private MedianFilter accelFilter = new MedianFilter(3);
 
 		/// <summary>
 		/// Gets the balbot being controlled
@@ -91,27 +90,16 @@ namespace Stasis.Software.Netduino
                                 double displacementProportionalValue = 1,
                                 double velocityProportionalValue = 2.0,
                                 double angleProportionalValue = 55.5,
-                                double angularVelocityProportionalValue = 8.0)
+                                double angularVelocityProportionalValue = 8.0,
+                                int integratorWindow = 10)
 		{
 			this.Robot = bot;
 
 			// PID
-			this.DisplacementPID = new PID();
-			this.VelocityPID = new PID();
-			this.AnglePID = new PID();
-			this.AngularVelocityPID = new PID();
-
-            // PID setpoints
-            this.DisplacementPID.SetPoint = displacementSetPoint;
-            this.VelocityPID.SetPoint = velocitySetPoint;
-            this.AnglePID.SetPoint = angleSetPoint;        
-            this.AngularVelocityPID.SetPoint = angularVelocitySetPoint;
-            
-            // PID gains
-            this.DisplacementPID.ProportionalConstant = displacementProportionalValue;
-            this.VelocityPID.ProportionalConstant = velocityProportionalValue;
-            this.AnglePID.ProportionalConstant = angleProportionalValue;
-            this.AngularVelocityPID.ProportionalConstant = angularVelocityProportionalValue;
+            this.DisplacementPID = new PID(setPoint: displacementSetPoint, proportionalConstant: displacementProportionalValue, integratorWindowSize: integratorWindow);
+            this.VelocityPID = new PID(setPoint: velocitySetPoint, proportionalConstant: velocityProportionalValue, integratorWindowSize: integratorWindow);
+            this.AnglePID = new PID(setPoint: angleSetPoint, proportionalConstant: angleProportionalValue, integratorWindowSize: integratorWindow);
+            this.AngularVelocityPID = new PID(setPoint: angularVelocitySetPoint, proportionalConstant: angularVelocityProportionalValue, integratorWindowSize: integratorWindow);
 
 			this.wifiMonitor.MessageReceived += new WiFiMonitor.MessageReceivedEventHandler(WifiMonitor_MessageReceived);
 		}

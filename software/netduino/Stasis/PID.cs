@@ -1,5 +1,6 @@
 using System;
 using Microsoft.SPOT;
+using System.Collections;
 
 namespace Stasis.Software.Netduino
 {
@@ -86,18 +87,38 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Accumulative error
 		/// </summary>
-		public double AccumulativeError;
+		public double IntegratorError;
+
+        /// <summary>
+        /// Queue for limiting the size of the integrator error
+        /// </summary>
+        public Queue IntegratorWindow
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Size of the integrator window
+        /// </summary>
+        public int IntegratorWindowSize
+        {
+            get;
+            private set;
+        }
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="setPoint"></param>
-		public PID(double setPoint = 0, double proportionalConstant = 0, double integrationConstant = 0, double derivativeConstant = 0)
+		public PID(double setPoint = 0, double proportionalConstant = 0, double integrationConstant = 0, double derivativeConstant = 0, int integratorWindowSize = 10)
 		{
 			this.SetPoint = setPoint;
 			this.ProportionalConstant = proportionalConstant;
 			this.IntegrationConstant = integrationConstant;
 			this.DerivativeConstant = derivativeConstant;
+            this.IntegratorWindow = new Queue();
+            this.IntegratorWindowSize = integratorWindowSize;
 
             this.CurrentError = 0;
 		}
@@ -112,11 +133,17 @@ namespace Stasis.Software.Netduino
 			double newError = newProcessValue - this.SetPoint;
 			
 			// Add to accumulated error
-			this.AccumulativeError += newError;
+            this.IntegratorWindow.Enqueue(newError);
+			this.IntegratorError += newError;
+
+            if (this.IntegratorWindow.Count > this.IntegratorWindowSize)
+            {
+                this.IntegratorError -= (double)this.IntegratorWindow.Dequeue();
+            }
 
 			// Calculate terms
 			ProportionalError = this.ProportionalConstant * newError;
-			IntegrationError = this.IntegrationConstant * this.AccumulativeError;
+			IntegrationError = this.IntegrationConstant * this.IntegratorError;
 			DerivativeError = this.DerivativeConstant * (newError - this.CurrentError);
 
             // Store current error
@@ -131,7 +158,7 @@ namespace Stasis.Software.Netduino
 
 		public void Reset()
 		{
-			this.AccumulativeError = 0;
+			this.IntegratorError = 0;
 		}
 	}
 }
