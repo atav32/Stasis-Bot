@@ -1,5 +1,6 @@
 using System;
 using Microsoft.SPOT;
+using System.Collections;
 
 namespace Stasis.Software.Netduino
 {
@@ -39,7 +40,7 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Values array
 		/// </summary>
-		private double[] values;
+		private Queue values;
 
 		/// <summary>
 		/// Index of next open spot (where next value added will go)
@@ -58,7 +59,7 @@ namespace Stasis.Software.Netduino
 		public MovingAverageFilter(int size)
 		{
 			this.Size = size;
-			this.values = new double[size];
+			this.values = new Queue();
 		}
 
 		/// <summary>
@@ -67,19 +68,18 @@ namespace Stasis.Software.Netduino
 		/// <param name="value"></param>
 		public void AddValue(double value)
 		{
-			if (this.Count == this.Size)
+			this.values.Enqueue(value);
+			this.sum += value;
+			this.Count++;
+
+			if (this.Count > this.Size)
 			{
 				// We are full, take out value at the next spot we are about to replace
-				sum -= this.values[this.valueBufferIndex];
+				this.sum -= (double)this.values.Dequeue();
 
 				// Took out out
 				this.Count--;
 			}
-
-			this.values[this.valueBufferIndex] = value;
-			this.sum += value;
-			this.Count++;
-			this.valueBufferIndex = (this.valueBufferIndex + 1) % this.Size;
 
 			this.Value = this.sum / (double)this.Count;
 		}
