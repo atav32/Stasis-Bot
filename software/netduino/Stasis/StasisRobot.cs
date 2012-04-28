@@ -80,6 +80,19 @@ namespace Stasis.Software.Netduino
             private set;
         }
 
+		// Median filteres to remove spikes
+		private MedianFilter frontIRFilter = new MedianFilter(3);
+		private MedianFilter rearIRFilter = new MedianFilter(3);
+		private MedianFilter leftMotorFilter = new MedianFilter(3);
+		private MedianFilter rightMotorFilter = new MedianFilter(3);
+		
+		// Moving Average Filter
+		private MovingAverageFilter frontIRAverage = new MovingAverageFilter(2);
+		private MovingAverageFilter rearIRAverage = new MovingAverageFilter(2);
+		private MovingAverageFilter leftMotorAverage = new MovingAverageFilter(2);
+		private MovingAverageFilter rightMotorAverage = new MovingAverageFilter(2);
+
+		
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -98,24 +111,43 @@ namespace Stasis.Software.Netduino
 		}
 
 		/// <summary>
+		/// 
+		/// </summary>
+		public void UpdateSensors()
+		{
+			// Update sensors + motors
+			this.FrontIRSensor.Update();
+			this.RearIRSensor.Update();
+			this.LeftMotor.Update();
+			this.RightMotor.Update();
+
+			// Median Filter
+			this.frontIRFilter.AddValue(FrontIRSensor.Distance);
+			this.rearIRFilter.AddValue(RearIRSensor.Distance);
+			this.leftMotorFilter.AddValue(LeftMotor.MeasuredDisplacement);
+			this.rightMotorFilter.AddValue(RightMotor.MeasuredDisplacement);
+
+			// Moving Averaging
+			this.frontIRAverage.AddValue(frontIRFilter.Value);
+			this.rearIRAverage.AddValue(rearIRFilter.Value);
+			this.leftMotorAverage.AddValue(leftMotorFilter.Value);
+			this.rightMotorAverage.AddValue(rightMotorFilter.Value);
+		}
+
+
+		/// <summary>
 		/// Lets the robot update state
 		/// </summary>
-		public void Update()
+		public void UpdateState()
 		{
             // Save previous values
             var previousAngle = this.Angle;
             var previousDisplacement = this.Displacement;
 
-			// Update sensors + motors
-			this.FrontIRSensor.Update();
-			this.RearIRSensor.Update();
-            this.LeftMotor.Update();
-            this.RightMotor.Update();
-
 			// Update tilt value
-			this.Displacement = this.LeftMotor.MeasuredDisplacement;
-			this.Velocity = this.LeftMotor.MeasuredVelocity;
-            this.Angle = CalculateAngleFromDistanceSensors(this.FrontIRSensor.Distance, this.RearIRSensor.Distance);
+			this.Displacement = (this.leftMotorAverage.Value + this.rightMotorAverage.Value) / 2;
+			this.Velocity = this.Displacement - previousDisplacement;
+            this.Angle = CalculateAngleFromDistanceSensors(this.frontIRAverage.Value, this.rearIRAverage.Value);
             this.AngularVelocity = this.Angle - previousAngle;
 		}
 

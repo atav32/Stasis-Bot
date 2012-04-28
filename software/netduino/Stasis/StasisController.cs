@@ -19,15 +19,6 @@ namespace Stasis.Software.Netduino
         private double sinAnglePIDOutput = 0.0;					// dummy varaible for sin(angle PID output)
 		private double sinAnglularVelocityPIDOutput = 0.0;      // dummy varaible for sin(angular velocity PID output)
 
-		// Moving Average Filter
-		private MovingAverageFilter angleAverage = new MovingAverageFilter(50);
-
-        // Median filteres to remove spikes
-        private MedianFilter displacementFilter = new MedianFilter(3);
-        private MedianFilter velocityFilter = new MedianFilter(3);
-        private MedianFilter angleIRFilter = new MedianFilter(3);
-        private MedianFilter angularVelocityIRFilter = new MedianFilter(3);
-
 		/// <summary>
 		/// Gets the balbot being controlled
 		/// </summary>
@@ -180,7 +171,7 @@ namespace Stasis.Software.Netduino
 			for (int i = 0; i < 100; i++)
 			{
 				// Update state/sensors
-				this.Robot.Update();
+				this.Robot.UpdateSensors();
 
 				// Add to filter
 				averagingFilter.AddValue(this.Robot.Angle);
@@ -198,36 +189,34 @@ namespace Stasis.Software.Netduino
 		{
 			// Motors are 0 by default
 			motorValue = 0;
+			
+			// Let the robot update it's sensors
+			this.Robot.UpdateSensors();
+			counter++;
 
-			// Let the robot update it's state
-			this.Robot.Update();
-
-			// Averaging
-			this.angleAverage.AddValue(this.Robot.Angle);
-
-			// Filter tilt values
-            this.displacementFilter.AddValue(this.Robot.Displacement);
-            this.velocityFilter.AddValue(this.Robot.Velocity);
-			this.angleIRFilter.AddValue(this.Robot.Angle);               // takes 5 fps
-            this.angularVelocityIRFilter.AddValue(this.Robot.AngularVelocity);
-
-			// Update the PID 
-            this.DisplacementPID.Update(this.displacementFilter.Value);
-            this.VelocityPID.Update(this.velocityFilter.Value);
-			this.AnglePID.Update(this.angleIRFilter.Value);
-            this.AngularVelocityPID.Update(this.angularVelocityIRFilter.Value);
-
-			// Only bother updating motors if tilt is within a certain range of vertical
-			if (this.angleIRFilter.Value > (this.AnglePID.SetPoint - saturation) && this.angleIRFilter.Value < (this.AnglePID.SetPoint + saturation))
+			if (counter == 5)
 			{
-                // Update with combined output of angle and angular velocity control
-				motorValue = (int)(this.DisplacementPID.Output + this.VelocityPID.Output + this.AnglePID.Output + this.AngularVelocityPID.Output);
-			}
+				// Let the robot update it's state
+				this.Robot.UpdateState();
 
-            // Set Motor Speed
-			this.Robot.LeftMotor.Velocity = 100;
-			this.Robot.RightMotor.Velocity = 100;
-			//this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
+				// Update the PID 
+				this.DisplacementPID.Update(this.Robot.Displacement);
+				this.VelocityPID.Update(this.Robot.Velocity);
+				this.AnglePID.Update(this.Robot.Angle);
+				this.AngularVelocityPID.Update(this.Robot.AngularVelocity);
+
+				// Only bother updating motors if tilt is within a certain range of vertical
+				if (this.Robot.Angle > (this.AnglePID.SetPoint - saturation) && this.Robot.Angle < (this.AnglePID.SetPoint + saturation))
+				{
+					// Update with combined output of angle and angular velocity control
+					motorValue = (int)(this.DisplacementPID.Output + this.VelocityPID.Output + this.AnglePID.Output + this.AngularVelocityPID.Output);
+				}
+
+				// Set Motor Speed
+				//this.Robot.LeftMotor.Velocity = 100;
+				//this.Robot.RightMotor.Velocity = 100;
+				this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
+			}
 
 			// Toggle Debug display
 			if (true)
@@ -250,6 +239,8 @@ namespace Stasis.Software.Netduino
 					this.loopSpeedCounter++;
 				}
 			}
+
+			counter = 0;
 		}
 	}
 }

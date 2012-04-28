@@ -183,7 +183,7 @@ namespace Stasis.Software.Netduino
 			if (this.lastUpdateDateTime != DateTime.MinValue)
 			{
 				var circumference = 0.037698;
-				this.MeasuredDisplacement = (this.encoderCounter / 65.330) * circumference;
+				this.MeasuredDisplacement = (this.encoderCounter / 320) * circumference;		// Encoder gives 16 pulses per rotation at shaft or 1600 pulses per rotation after gear box. BUT...the PIC only sends through every 5th pulse
 
 				var timeDiff = DateTime.Now - this.lastUpdateDateTime;
 				this.MeasuredVelocity = this.MeasuredDisplacement / ((double)timeDiff.Ticks / (double)TimeSpan.TicksPerSecond);
