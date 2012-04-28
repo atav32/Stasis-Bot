@@ -87,7 +87,7 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Accumulative error
 		/// </summary>
-		public double IntegratorError;
+		public double AccumulativeError;
 
         /// <summary>
         /// Queue for limiting the size of the integrator error
@@ -134,16 +134,21 @@ namespace Stasis.Software.Netduino
 			
 			// Add to accumulated error
             this.IntegratorWindow.Enqueue(newError);
-			this.IntegratorError += newError;
+			this.AccumulativeError += newError;
 
             if (this.IntegratorWindow.Count > this.IntegratorWindowSize)
             {
-                this.IntegratorError -= (double)this.IntegratorWindow.Dequeue();
+                this.AccumulativeError -= (double)this.IntegratorWindow.Dequeue();
+            }
+
+            if (this.AccumulativeError > 100)
+            {
+                this.AccumulativeError = 100;
             }
 
 			// Calculate terms
 			ProportionalError = this.ProportionalConstant * newError;
-			IntegrationError = this.IntegrationConstant * this.IntegratorError;
+			IntegrationError = this.IntegrationConstant * this.AccumulativeError;
 			DerivativeError = this.DerivativeConstant * (newError - this.CurrentError);
 
             // Store current error
@@ -158,7 +163,7 @@ namespace Stasis.Software.Netduino
 
 		public void Reset()
 		{
-			this.IntegratorError = 0;
+			this.AccumulativeError = 0;
 		}
 	}
 }
