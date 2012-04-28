@@ -19,7 +19,10 @@ namespace Stasis.Software.Netduino
         private double sinAnglePIDOutput = 0.0;					// dummy varaible for sin(angle PID output)
 		private double sinAnglularVelocityPIDOutput = 0.0;      // dummy varaible for sin(angular velocity PID output)
 
-        // Median filteres to remove 
+		// Moving Average Filter
+		private MovingAverageFilter angleAverage = new MovingAverageFilter(50);
+
+        // Median filteres to remove spikes
         private MedianFilter displacementFilter = new MedianFilter(3);
         private MedianFilter velocityFilter = new MedianFilter(3);
         private MedianFilter angleIRFilter = new MedianFilter(3);
@@ -84,13 +87,14 @@ namespace Stasis.Software.Netduino
 		/// <param name="bot"></param>
 		public StasisController(StasisRobot bot, 
                                 double displacementSetPoint = 0.0,
-                                double angleSetPoint = 91.75,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+                                double angleSetPoint = 90.9,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
                                 double velocitySetPoint = 0.0,
                                 double angularVelocitySetPoint = 0.0, 
-                                double displacementProportionalValue = 1,
-                                double velocityProportionalValue = 2.0,
-                                double angleProportionalValue = 55.5,
-                                double angularVelocityProportionalValue = 8.0,
+                                double displacementProportionalValue = 0,
+                                double velocityProportionalValue = 0,
+                                double angleProportionalValue = 50,
+								double angleIntegrationValue = 25,
+                                double angularVelocityProportionalValue = 0,
                                 int integratorWindow = 10)
 		{
 			this.Robot = bot;
@@ -98,7 +102,7 @@ namespace Stasis.Software.Netduino
 			// PID
             this.DisplacementPID = new PID(setPoint: displacementSetPoint, proportionalConstant: displacementProportionalValue, integratorWindowSize: integratorWindow);
             this.VelocityPID = new PID(setPoint: velocitySetPoint, proportionalConstant: velocityProportionalValue, integratorWindowSize: integratorWindow);
-            this.AnglePID = new PID(setPoint: angleSetPoint, proportionalConstant: angleProportionalValue, integratorWindowSize: integratorWindow);
+            this.AnglePID = new PID(setPoint: angleSetPoint, proportionalConstant: angleProportionalValue, integrationConstant: angleIntegrationValue, integratorWindowSize: integratorWindow);
             this.AngularVelocityPID = new PID(setPoint: angularVelocitySetPoint, proportionalConstant: angularVelocityProportionalValue, integratorWindowSize: integratorWindow);
 
 			this.wifiMonitor.MessageReceived += new WiFiMonitor.MessageReceivedEventHandler(WifiMonitor_MessageReceived);
@@ -198,6 +202,9 @@ namespace Stasis.Software.Netduino
 			// Let the robot update it's state
 			this.Robot.Update();
 
+			// Averaging
+			this.angleAverage.AddValue(this.Robot.Angle);
+
 			// Filter tilt values
             this.displacementFilter.AddValue(this.Robot.Displacement);
             this.velocityFilter.AddValue(this.Robot.Velocity);
@@ -232,8 +239,10 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-					Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
+					//Debug.Print("DATA," + this.angleAverage.Value);
+					//Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
 					//Debug.Print("DATA," + this.Robot.LeftMotor.Velocity + "," + this.Robot.RightMotor.Velocity + "," + this.Robot.Angle + "," + this.Robot.AngularVelocity);
+					Debug.Print("DATA," + motorValue);
 					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
