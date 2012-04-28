@@ -40,7 +40,7 @@ namespace Stasis.Software.Netduino
 		/// <summary>
 		/// Values array
 		/// </summary>
-		private Queue values;
+		private double[] values;
 
 		/// <summary>
 		/// Index of next open spot (where next value added will go)
@@ -59,7 +59,7 @@ namespace Stasis.Software.Netduino
 		public MovingAverageFilter(int size)
 		{
 			this.Size = size;
-			this.values = new Queue();
+			this.values = new double[size];
 		}
 
 		/// <summary>
@@ -68,18 +68,19 @@ namespace Stasis.Software.Netduino
 		/// <param name="value"></param>
 		public void AddValue(double value)
 		{
-			this.values.Enqueue(value);
-			this.sum += value;
-			this.Count++;
-
-			if (this.Count > this.Size)
+			if (this.Count == this.Size)
 			{
 				// We are full, take out value at the next spot we are about to replace
-				this.sum -= (double)this.values.Dequeue();
+				sum -= this.values[this.valueBufferIndex];
 
 				// Took out out
 				this.Count--;
 			}
+
+			this.values[this.valueBufferIndex] = value;
+			this.sum += value;
+			this.Count++;
+			this.valueBufferIndex = (this.valueBufferIndex + 1) % this.Size;
 
 			this.Value = this.sum / (double)this.Count;
 		}

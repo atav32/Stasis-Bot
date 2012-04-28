@@ -65,7 +65,11 @@ namespace Stasis.Software.Netduino
         /// <param name="value">Newest value</param>
         public void AddValue(double value)
         {
-           
+			if (this.Size == 1)
+			{
+				this.Value = value;
+				return;
+			}
 
             if (this.Count == this.Size)
             {

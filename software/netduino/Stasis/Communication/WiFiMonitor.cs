@@ -24,7 +24,7 @@ namespace Stasis.Software.Netduino.Communication
 		/// <summary>
 		/// Running raw message buffer
 		/// </summary>
-		private byte[] rawMessage = new byte[64];
+		private byte[] rawMessage = new byte[256];
 
 		/// <summary>
 		/// Raw message length so far

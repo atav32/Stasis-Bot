@@ -46,23 +46,30 @@ namespace Stasis.Software.Netduino.Communication
 			/// <param name="rawMessageLength"></param>
 			public Message(byte[] rawMessage, int rawMessageLength)
 			{
-				byte[] rawMessageRealSize = new byte[rawMessageLength];
-				for (int i = 0; i < rawMessageLength; i++)
+				try
 				{
-					rawMessageRealSize[i] = rawMessage[i];
+					byte[] rawMessageRealSize = new byte[rawMessageLength];
+					for (int i = 0; i < rawMessageLength; i++)
+					{
+						rawMessageRealSize[i] = rawMessage[i];
+					}
+					string s = new String(Encoding.UTF8.GetChars(rawMessageRealSize));
+					var parts = s.Split(new char[] { ',' });
+					this.Type = parts[0];
+					if (this.Type.IndexOf('*') != -1)
+					{
+						var typeParts = this.Type.Split(new char[] { '*' });
+						this.Type = typeParts[typeParts.Length - 1];
+					}
+					this.Values = new double[parts.Length - 2];
+					for (int i = 1; i < parts.Length - 1; i++)
+					{
+						this.Values[i - 1] = double.Parse(parts[i]);
+					}
 				}
-				string s = new String(Encoding.UTF8.GetChars(rawMessageRealSize));
-				var parts = s.Split(new char[] { ',' });
-				this.Type = parts[0];
-				if (this.Type.IndexOf('*') != -1)
+				catch (Exception ex)
 				{
-					var typeParts = this.Type.Split(new char[] { '*' });
-					this.Type = typeParts[typeParts.Length - 1];					
-				}
-				this.Values = new double[parts.Length - 2];
-				for (int i = 1; i < parts.Length - 1; i++)
-				{
-					this.Values[i - 1] = double.Parse(parts[i]);
+					this.Type = MessageType.Invalid;
 				}
 			}
 		}
@@ -72,6 +79,7 @@ namespace Stasis.Software.Netduino.Communication
 		/// </summary>
 		public class MessageType
 		{
+			public const string Invalid = "INVALID";
 			public const string SetPID = "SPID";
 			public const string GetPID = "GPID";
 			public const string GetLoopSpeed = "GLS";

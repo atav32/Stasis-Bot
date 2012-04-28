@@ -81,16 +81,16 @@ namespace Stasis.Software.Netduino
         }
 
 		// Median filteres to remove spikes
-		private MedianFilter frontIRFilter = new MedianFilter(3);
-		private MedianFilter rearIRFilter = new MedianFilter(3);
-		private MedianFilter leftMotorFilter = new MedianFilter(3);
-		private MedianFilter rightMotorFilter = new MedianFilter(3);
+		private MedianFilter frontIRFilter = new MedianFilter(1);
+		private MedianFilter rearIRFilter = new MedianFilter(1);
+		private MedianFilter leftMotorFilter = new MedianFilter(1);
+		private MedianFilter rightMotorFilter = new MedianFilter(1);
 		
 		// Moving Average Filter
-		private MovingAverageFilter frontIRAverage = new MovingAverageFilter(2);
-		private MovingAverageFilter rearIRAverage = new MovingAverageFilter(2);
-		private MovingAverageFilter leftMotorAverage = new MovingAverageFilter(2);
-		private MovingAverageFilter rightMotorAverage = new MovingAverageFilter(2);
+		private MovingAverageFilter frontIRAverage = new MovingAverageFilter(1);
+		private MovingAverageFilter rearIRAverage = new MovingAverageFilter(1);
+		private MovingAverageFilter leftMotorAverage = new MovingAverageFilter(1);
+		private MovingAverageFilter rightMotorAverage = new MovingAverageFilter(1);
 
 		
 		/// <summary>
@@ -145,8 +145,8 @@ namespace Stasis.Software.Netduino
             var previousDisplacement = this.Displacement;
 
 			// Update tilt value
-			this.Displacement = (this.leftMotorAverage.Value + this.rightMotorAverage.Value) / 2;
-			this.Velocity = this.Displacement - previousDisplacement;
+			this.Displacement = (this.leftMotorAverage.Value + this.rightMotorAverage.Value) / 2.0;
+			this.Velocity = (this.LeftMotor.MeasuredVelocity + this.RightMotor.MeasuredVelocity) / 2.0;
             this.Angle = CalculateAngleFromDistanceSensors(this.frontIRAverage.Value, this.rearIRAverage.Value);
             this.AngularVelocity = this.Angle - previousAngle;
 		}

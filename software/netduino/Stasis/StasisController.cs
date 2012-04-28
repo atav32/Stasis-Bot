@@ -83,10 +83,10 @@ namespace Stasis.Software.Netduino
                                 double angularVelocitySetPoint = 0.0, 
                                 double displacementProportionalValue = 0,
                                 double velocityProportionalValue = 0,
-                                double angleProportionalValue = 50,
-								double angleIntegrationValue = 25,
+                                double angleProportionalValue = 8,
+								double angleIntegrationValue = 0,
                                 double angularVelocityProportionalValue = 0,
-                                int integratorWindow = 10)
+                                int integratorWindow = 4)
 		{
 			this.Robot = bot;
 
@@ -194,7 +194,7 @@ namespace Stasis.Software.Netduino
 			this.Robot.UpdateSensors();
 			counter++;
 
-			if (counter == 5)
+			if (counter >= 1)
 			{
 				// Let the robot update it's state
 				this.Robot.UpdateState();
@@ -216,6 +216,20 @@ namespace Stasis.Software.Netduino
 				//this.Robot.LeftMotor.Velocity = 100;
 				//this.Robot.RightMotor.Velocity = 100;
 				this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
+
+				counter = 0;
+			}
+
+			if (this.VelocityPID.SetPoint != 0)
+			{
+				Debug.Print("DATA, " + motorValue + ",   " +
+									this.Robot.Angle.ToString("N4") + ",   " +
+									this.Robot.AngularVelocity.ToString("N4") + ",   " +
+									this.Robot.Displacement.ToString("N4") + ",   " +
+									this.AnglePID.Output.ToString("N4") + ",   " +
+									this.AngularVelocityPID.Output.ToString("N4") + ",   " +
+									this.DisplacementPID.Output.ToString("N4"));
+
 			}
 
 			// Toggle Debug display
@@ -228,10 +242,11 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
+					//Debug.Print("DATA," + LoopSpeed);
 					//Debug.Print("DATA," + this.angleAverage.Value);
 					//Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
 					//Debug.Print("DATA," + this.Robot.LeftMotor.Velocity + "," + this.Robot.RightMotor.Velocity + "," + this.Robot.Angle + "," + this.Robot.AngularVelocity);
-					Debug.Print("DATA," + motorValue);
+
 					this.wifiMonitor.SendMessage(new WiFiMonitor.Message(WiFiMonitor.MessageType.GetLoopSpeed, new double[] { this.LoopSpeed }));
 				}
 				else
@@ -239,8 +254,7 @@ namespace Stasis.Software.Netduino
 					this.loopSpeedCounter++;
 				}
 			}
-
-			counter = 0;
+			
 		}
 	}
 }
