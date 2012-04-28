@@ -78,13 +78,14 @@ namespace Stasis.Software.Netduino
 		/// <param name="bot"></param>
 		public StasisController(StasisRobot bot, 
                                 double displacementSetPoint = 0.0,
-                                double angleSetPoint = 0,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+                                double angleSetPoint = 90.5,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
                                 double velocitySetPoint = 0.0,
                                 double angularVelocitySetPoint = 0.0, 
                                 double displacementProportionalValue = 0,
                                 double velocityProportionalValue = 0,
-                                double angleProportionalValue = 8,
-								double angleIntegrationValue = 0,
+                                double angleProportionalValue = 7.5,
+								double angleIntegrationValue = 1.25,
+								double angleDerivativeValue = 55.0,
                                 double angularVelocityProportionalValue = 0,
                                 int integratorWindow = 4)
 		{
@@ -93,7 +94,7 @@ namespace Stasis.Software.Netduino
 			// PID
             this.DisplacementPID = new PID(setPoint: displacementSetPoint, proportionalConstant: displacementProportionalValue, integratorWindowSize: integratorWindow);
             this.VelocityPID = new PID(setPoint: velocitySetPoint, proportionalConstant: velocityProportionalValue, integratorWindowSize: integratorWindow);
-            this.AnglePID = new PID(setPoint: angleSetPoint, proportionalConstant: angleProportionalValue, integrationConstant: angleIntegrationValue, integratorWindowSize: integratorWindow);
+            this.AnglePID = new PID(setPoint: angleSetPoint, proportionalConstant: angleProportionalValue, integrationConstant: angleIntegrationValue, derivativeConstant:angleDerivativeValue, integratorWindowSize: integratorWindow);
             this.AngularVelocityPID = new PID(setPoint: angularVelocitySetPoint, proportionalConstant: angularVelocityProportionalValue, integratorWindowSize: integratorWindow);
 
 			this.wifiMonitor.MessageReceived += new WiFiMonitor.MessageReceivedEventHandler(WifiMonitor_MessageReceived);
