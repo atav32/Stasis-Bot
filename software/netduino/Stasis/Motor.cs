@@ -165,10 +165,10 @@ namespace Stasis.Software.Netduino
 			this.encoderDirectionPin = new InterruptPort(encoderDirection, false, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeBoth);
 
 			// Listen to pulses from teh encoder
-			this.encoderPulsePin.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
+			//this.encoderPulsePin.OnInterrupt += new NativeEventHandler(encoder_OnInterrupt);
 
 			// Listen to direction changes from the encoder
-			this.encoderDirectionPin.OnInterrupt += new NativeEventHandler(encoderDirectionPin_OnInterrupt);
+			//this.encoderDirectionPin.OnInterrupt += new NativeEventHandler(encoderDirectionPin_OnInterrupt);
 
 			// Reset velocity and distance
 			this.MeasuredVelocity = this.MeasuredDisplacement = 0;

@@ -118,20 +118,20 @@ namespace Stasis.Software.Netduino
 			// Update sensors + motors
 			this.FrontIRSensor.Update();
 			this.RearIRSensor.Update();
-			this.LeftMotor.Update();
-			this.RightMotor.Update();
+			//this.LeftMotor.Update();
+			//this.RightMotor.Update();
 
 			// Median Filter
-			this.frontIRFilter.AddValue(FrontIRSensor.Distance);
-			this.rearIRFilter.AddValue(RearIRSensor.Distance);
-			this.leftMotorFilter.AddValue(LeftMotor.MeasuredDisplacement);
-			this.rightMotorFilter.AddValue(RightMotor.MeasuredDisplacement);
+			//this.frontIRFilter.AddValue(FrontIRSensor.Distance);
+			//this.rearIRFilter.AddValue(RearIRSensor.Distance);
+			//this.leftMotorFilter.AddValue(LeftMotor.MeasuredDisplacement);
+			//this.rightMotorFilter.AddValue(RightMotor.MeasuredDisplacement);
 
 			// Moving Averaging
-			this.frontIRAverage.AddValue(frontIRFilter.Value);
-			this.rearIRAverage.AddValue(rearIRFilter.Value);
-			this.leftMotorAverage.AddValue(leftMotorFilter.Value);
-			this.rightMotorAverage.AddValue(rightMotorFilter.Value);
+			//this.frontIRAverage.AddValue(this.FrontIRSensor.Distance);
+			//this.rearIRAverage.AddValue(this.RearIRSensor.Distance);
+			//this.leftMotorAverage.AddValue(leftMotorFilter.Value);
+			//this.rightMotorAverage.AddValue(rightMotorFilter.Value);
 		}
 
 
@@ -147,7 +147,7 @@ namespace Stasis.Software.Netduino
 			// Update tilt value
 			this.Displacement = (this.leftMotorAverage.Value + this.rightMotorAverage.Value) / 2.0;
 			this.Velocity = (this.LeftMotor.MeasuredVelocity + this.RightMotor.MeasuredVelocity) / 2.0;
-            this.Angle = CalculateAngleFromDistanceSensors(this.frontIRAverage.Value, this.rearIRAverage.Value);
+            this.Angle = CalculateAngleFromDistanceSensors(this.FrontIRSensor.Distance, this.RearIRSensor.Distance);
             this.AngularVelocity = this.Angle - previousAngle;
 		}
 

@@ -78,7 +78,7 @@ namespace Stasis.Software.Netduino
 		/// <param name="bot"></param>
 		public StasisController(StasisRobot bot, 
                                 double displacementSetPoint = 0.0,
-                                double angleSetPoint = 90.9,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
+                                double angleSetPoint = 0,               // slightly tilted; should calibrate at the beginning of each run -BZ (4/12/12)
                                 double velocitySetPoint = 0.0,
                                 double angularVelocitySetPoint = 0.0, 
                                 double displacementProportionalValue = 0,
@@ -192,34 +192,29 @@ namespace Stasis.Software.Netduino
 			
 			// Let the robot update it's sensors
 			this.Robot.UpdateSensors();
-			counter++;
 
-			if (counter >= 1)
+			// Let the robot update it's state
+			this.Robot.UpdateState();
+
+			// Update the PID 
+			this.DisplacementPID.Update(this.Robot.Displacement);
+			this.VelocityPID.Update(this.Robot.Velocity);
+			this.AnglePID.Update(this.Robot.Angle);
+			this.AngularVelocityPID.Update(this.Robot.AngularVelocity);
+
+			// Only bother updating motors if tilt is within a certain range of vertical
+			if (this.Robot.Angle > (this.AnglePID.SetPoint - saturation) && this.Robot.Angle < (this.AnglePID.SetPoint + saturation))
 			{
-				// Let the robot update it's state
-				this.Robot.UpdateState();
-
-				// Update the PID 
-				this.DisplacementPID.Update(this.Robot.Displacement);
-				this.VelocityPID.Update(this.Robot.Velocity);
-				this.AnglePID.Update(this.Robot.Angle);
-				this.AngularVelocityPID.Update(this.Robot.AngularVelocity);
-
-				// Only bother updating motors if tilt is within a certain range of vertical
-				if (this.Robot.Angle > (this.AnglePID.SetPoint - saturation) && this.Robot.Angle < (this.AnglePID.SetPoint + saturation))
-				{
-					// Update with combined output of angle and angular velocity control
-					motorValue = (int)(this.DisplacementPID.Output + this.VelocityPID.Output + this.AnglePID.Output + this.AngularVelocityPID.Output);
-				}
-
-				// Set Motor Speed
-				//this.Robot.LeftMotor.Velocity = 100;
-				//this.Robot.RightMotor.Velocity = 100;
-				this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
-
-				counter = 0;
+				// Update with combined output of angle and angular velocity control
+				motorValue = (int)(this.DisplacementPID.Output + this.VelocityPID.Output + this.AnglePID.Output + this.AngularVelocityPID.Output);
 			}
 
+			// Set Motor Speed
+			//this.Robot.LeftMotor.Velocity = 100;
+			//this.Robot.RightMotor.Velocity = 100;
+			this.Robot.LeftMotor.Velocity = this.Robot.RightMotor.Velocity = motorValue;
+
+	
 			if (this.VelocityPID.SetPoint != 0)
 			{
 				Debug.Print("DATA, " + motorValue + ",   " +
@@ -242,7 +237,7 @@ namespace Stasis.Software.Netduino
 					this.LoopSpeed = this.loopSpeedCounter;
 					this.loopSpeedCounter = 0;
 					this.lastDateTime = now;
-					//Debug.Print("DATA," + LoopSpeed);
+					Debug.Print("DATA," + LoopSpeed);
 					//Debug.Print("DATA," + this.angleAverage.Value);
 					//Debug.Print("DATA," + this.Robot.LeftMotor.MeasuredVelocity + "," + this.Robot.RightMotor.MeasuredVelocity);
 					//Debug.Print("DATA," + this.Robot.LeftMotor.Velocity + "," + this.Robot.RightMotor.Velocity + "," + this.Robot.Angle + "," + this.Robot.AngularVelocity);
